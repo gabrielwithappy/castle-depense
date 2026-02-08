@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>implementation_plan</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="implementation_plan_files/libs/clipboard/clipboard.min.js"></script>
+<script src="implementation_plan_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="implementation_plan_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="implementation_plan_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="implementation_plan_files/libs/quarto-html/popper.min.js"></script>
+<script src="implementation_plan_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="implementation_plan_files/libs/quarto-html/anchor.min.js"></script>
+<link href="implementation_plan_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="implementation_plan_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="implementation_plan_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="implementation_plan_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="implementation_plan_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="성-디펜스-게임-구현-계획-ai-병렬-처리-최적화" class="level1">
+<h1>성 디펜스 게임 구현 계획 (AI 병렬 처리 최적화)</h1>
+<section id="목표-설명" class="level2">
+<h2 class="anchored" data-anchor-id="목표-설명">목표 설명</h2>
+<p>웹 기반의 성 디펜스 게임을 제작합니다. <strong>모듈화된 아키텍처</strong>를 도입하여 각 게임 요소를 독립적으로 구현할 수 있도록 설계합니다. 이를 통해 AI가 여러 파일을 병렬적으로 생성하고 수정하기 용이하게 만듭니다.</p>
+</section>
+<section id="사용자-검토-필요" class="level2">
+<h2 class="anchored" data-anchor-id="사용자-검토-필요">사용자 검토 필요</h2>
+<blockquote class="blockquote">
+<p>[!NOTE] <strong>AI 최적화 설계</strong>: 각 클래스(성, 몬스터, 투사체)는 상호 의존성을 최소화하고 <code>Game</code> 클래스에서 이를 조율하는 방식으로 구현합니다. 이를 통해 각 모듈을 동시에 개발할 수 있습니다.</p>
+</blockquote>
+</section>
+<section id="변경-제안" class="level2">
+<h2 class="anchored" data-anchor-id="변경-제안">변경 제안</h2>
+<section id="아키텍처-전략-컴포넌트-기반-및-이벤트-주도" class="level3">
+<h3 class="anchored" data-anchor-id="아키텍처-전략-컴포넌트-기반-및-이벤트-주도">아키텍처 전략: 컴포넌트 기반 및 이벤트 주도</h3>
+<p>서로 직접 참조하기보다 이벤트나 상위 매니저를 통해 통신하여 결합도를 낮춥니다.</p>
+</section>
+<section id="단계-공통-모듈-기반" class="level3">
+<h3 class="anchored" data-anchor-id="단계-공통-모듈-기반">[1단계: 공통 모듈 (기반)]</h3>
+<p>가장 먼저 정의되어야 하는 상수와 유틸리티입니다. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/constants.js">js/constants.js</a> - 게임 밸런스 데이터 (유닛 스탯, 비용, 성 체력 등) - 이벤트 타입 정의 #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/utils.js">js/utils.js</a> - 충돌 감지 함수, 난수 생성기 등 헬퍼 함수</p>
+</section>
+<section id="단계-독립-엔티티-병렬-구현-가능" class="level3">
+<h3 class="anchored" data-anchor-id="단계-독립-엔티티-병렬-구현-가능">[2단계: 독립 엔티티 (병렬 구현 가능)]</h3>
+<p>공통 모듈에만 의존하며, 서로 의존하지 않는 독립 객체들입니다. <strong>이 단계의 파일들은 동시에 생성할 수 있습니다.</strong> #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/entities/Entity.js">js/entities/Entity.js</a> - 모든 게임 객체의 부모 클래스 (위치, 그리기 메서드 기본형) #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/entities/Castle.js">js/entities/Castle.js</a> - 성의 체력 표시, <code>Entity</code> 상속. <code>takeDamage</code> 메서드 구현. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/entities/Monster.js">js/entities/Monster.js</a> - 몬스터 이동, 공격 상태 머신. <code>Entity</code> 상속. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/entities/Projectile.js">js/entities/Projectile.js</a> - 성의 크리스탈이나 유닛이 발사하는 투사체.</p>
+</section>
+<section id="단계-시스템-및-매니저-조율" class="level3">
+<h3 class="anchored" data-anchor-id="단계-시스템-및-매니저-조율">[3단계: 시스템 및 매니저 (조율)]</h3>
+<p>독립 엔티티들을 관리하고 게임 루프를 돌리는 시스템입니다. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/managers/SpawnManager.js">js/managers/SpawnManager.js</a> - AI 및 플레이어의 유닛 소환 관리 (쿨타임, 자원 체크). #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/managers/UIManager.js">js/managers/UIManager.js</a> - DOM 요소 업데이트 (체력바, 자원 텍스트). #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/Game.js">js/Game.js</a> - 메인 게임 루프 (<code>update</code>, <code>draw</code>). - 엔티티 리스트 관리 및 충돌 체크 루프 실행.</p>
+</section>
+<section id="단계-진입점" class="level3">
+<h3 class="anchored" data-anchor-id="단계-진입점">[4단계: 진입점]</h3>
+<section id="new-index.html" class="level4">
+<h4 class="anchored" data-anchor-id="new-index.html">[NEW] <a href="file:///d:/01_PRJ/castle-depense/index.html">index.html</a></h4>
+<ul>
+<li>모듈 타입 스크립트 로드 (<code>&lt;script type="module" src="js/main.js"&gt;&lt;/script&gt;</code>) #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/style.css">style.css</a> #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/js/main.js">js/main.js</a></li>
+<li>게임 인스턴스 생성 및 시작.</li>
+</ul>
+</section>
+</section>
+<section id="테스트-인프라-병렬-검증" class="level3">
+<h3 class="anchored" data-anchor-id="테스트-인프라-병렬-검증">[테스트 인프라 (병렬 검증)]</h3>
+<p>브라우저에서 직접 실행 가능한 경량 테스트 러너를 구축합니다. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/test/test_runner.html">test/test_runner.html</a> - 브라우저 기반 테스트 러너. 각 모듈의 테스트 파일을 동적으로 로드하여 실행. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/test/simple_test.js">test/simple_test.js</a> - <code>describe</code>, <code>it</code>, <code>expect</code> 등을 구현한 초경량 테스트 프레임워크. #### [NEW] <a href="file:///d:/01_PRJ/castle-depense/test/entities/Monster.test.js">test/entities/Monster.test.js</a> - 몬스터 생성 및 상태 변화 테스트 예시.</p>
+</section>
+</section>
+<section id="검증-계획" class="level2">
+<h2 class="anchored" data-anchor-id="검증-계획">검증 계획</h2>
+<section id="수동-검증-및-브라우저-테스트" class="level3">
+<h3 class="anchored" data-anchor-id="수동-검증-및-브라우저-테스트">수동 검증 및 브라우저 테스트</h3>
+<ol type="1">
+<li><strong>단위 테스트 (Unit Test)</strong>: <code>test_runner.html</code>을 브라우저로 열어 각 모듈의 로직(이동, 데미지 계산)이 정상 작동하는지 확인. 이를 통해 UI 없이도 로직 검증 가능.</li>
+<li><strong>시각적 검증</strong>: 메인 게임 화면에서 실제 움직임 확인.</li>
+</ol>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

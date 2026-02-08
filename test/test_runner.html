@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Castle Defense Test Runner</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #eee;
+            padding: 20px;
+        }
+
+        .pass {
+            color: green;
+        }
+
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+
+        .suite {
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Test Results</h1>
+    <div id="results">Running tests...</div>
+
+    <script type="module">
+        import { runTests } from './simple_test.js';
+
+        // Import all test files here
+        import './entities/Monster.test.js';
+        import './entities/Castle.test.js';
+        import './entities/Projectile.test.js';
+        // We will uncomment or add imports dynamically or manually for now.
+
+        // Check if there are any tests loaded
+        setTimeout(() => {
+            runTests();
+        }, 100);
+    </script>
+</body>
+
+</html>
