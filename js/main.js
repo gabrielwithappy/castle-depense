@@ -10,6 +10,7 @@ class Main {
         this.game = null;
         this.spawnManager = null;
         this.uiManager = null;
+        this.selectedLevel = 'normal';
     }
 
     /**
@@ -33,12 +34,8 @@ class Main {
         // 콜백 연결
         this.setupCallbacks();
 
-        // UI 초기화
-        this.uiManager.createDeckUI(this.spawnManager.getDeckInfo());
-        this.uiManager.hideGameOver();
-
-        // 게임 시작
-        this.startGame();
+        // 시작 화면 표시 (게임 시작 대기)
+        this.uiManager.showStartScreen();
     }
 
     /**
@@ -67,6 +64,15 @@ class Main {
         // 재시작 콜백
         this.uiManager.onRestart = () => {
             this.uiManager.hideGameOver();
+            this.uiManager.showStartScreen();
+        };
+
+        // AI 난이도 선택 콜백
+        this.uiManager.onLevelSelect = (level) => {
+            this.selectedLevel = level;
+            this.spawnManager.setAILevel(level);
+            this.uiManager.hideStartScreen();
+            this.uiManager.createDeckUI(this.spawnManager.getDeckInfo());
             this.startGame();
         };
     }

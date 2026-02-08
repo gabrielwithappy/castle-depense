@@ -12,10 +12,13 @@ export default class UIManager {
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.gameResultEl = document.getElementById('game-result');
         this.restartBtn = document.getElementById('restart-btn');
+        this.startScreen = document.getElementById('start-screen');
+        this.levelButtons = document.querySelectorAll('.level-btn');
 
         // 콜백
         this.onCardClick = null;
         this.onRestart = null;
+        this.onLevelSelect = null;
 
         this.setupEventListeners();
     }
@@ -28,6 +31,34 @@ export default class UIManager {
             this.restartBtn.addEventListener('click', () => {
                 if (this.onRestart) this.onRestart();
             });
+        }
+
+        // AI 난이도 선택 버튼
+        this.levelButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const level = btn.dataset.level;
+                if (this.onLevelSelect) {
+                    this.onLevelSelect(level);
+                }
+            });
+        });
+    }
+
+    /**
+     * 시작 화면 표시
+     */
+    showStartScreen() {
+        if (this.startScreen) {
+            this.startScreen.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * 시작 화면 숨기기
+     */
+    hideStartScreen() {
+        if (this.startScreen) {
+            this.startScreen.classList.add('hidden');
         }
     }
 

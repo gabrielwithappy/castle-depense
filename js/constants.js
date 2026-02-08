@@ -6,9 +6,9 @@ export const CONSTANTS = {
     },
     CASTLE: {
         MAX_HP: 1000,
-        ATTACK_RANGE: 300,
-        ATTACK_DAMAGE: 50,
-        ATTACK_COOLDOWN: 60, // frames (1 sec)
+        ATTACK_RANGE: 500,
+        ATTACK_DAMAGE: 20, // reduced from 50 for balance
+        ATTACK_COOLDOWN: 1.5, // seconds (slower attack)
     },
     MONSTER: {
         // defined later

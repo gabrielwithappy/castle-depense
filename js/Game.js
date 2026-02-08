@@ -185,10 +185,13 @@ export default class Game {
      * 성 크리스탈 공격 로직
      */
     castleAttack(castle, targetTeam) {
-        if (!castle.canAttack()) return;
-
         // 공격 범위 내 적 찾기
         const enemies = this.monsters.filter(m => m.team === targetTeam && !m.isDead);
+
+        if (enemies.length === 0) return; // 적이 없으면 리턴
+
+        if (!castle.canAttack()) return; // 쿨다운 중이면 리턴
+
         for (const enemy of enemies) {
             if (castle.isInRange(enemy)) {
                 const damage = castle.attack();
@@ -201,6 +204,7 @@ export default class Game {
 
                     const proj = new Projectile(projX, projY, targetX, targetY, damage, 400, castle.team);
                     this.projectiles.push(proj);
+                    console.log(`[Crystal Attack] ${castle.team} castle fired at enemy at x=${enemy.x}`);
                 }
                 break; // 한 번에 하나만 공격
             }

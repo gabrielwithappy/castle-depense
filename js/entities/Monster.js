@@ -204,13 +204,34 @@ export default class Monster extends Entity {
     draw(ctx) {
         if (this.state === 'dead') return;
 
+        // 팀별 색상 오버레이 적용
+        // Player: 파란 계열, AI: 빨간 계열
+        let bodyColor;
+        if (this.team === 'player') {
+            // 플레이어 몬스터는 파란색 계열
+            bodyColor = this.getTeamColor('#3388FF');
+        } else {
+            // AI 몬스터는 빨간색 계열  
+            bodyColor = this.getTeamColor('#FF4444');
+        }
+
         // 기본 몬스터 바디
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = bodyColor;
         ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        // 등급에 따른 내부 패턴 (구분용 아이콘)
+        ctx.fillStyle = this.color;
+        const patternSize = Math.min(this.width, this.height) * 0.4;
+        ctx.fillRect(
+            this.x + (this.width - patternSize) / 2,
+            this.y + (this.height - patternSize) / 2,
+            patternSize,
+            patternSize
+        );
 
         // 테두리 (팀 색상)
         ctx.strokeStyle = this.team === 'player' ? '#0066CC' : '#CC0000';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
 
         // 체력바 배경
@@ -227,10 +248,18 @@ export default class Monster extends Entity {
         ctx.fillStyle = hpRatio > 0.5 ? '#00FF00' : hpRatio > 0.2 ? '#FFFF00' : '#FF0000';
         ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpRatio, hpBarHeight);
 
-        // 등급 표시 (몬스터 위)
+        // 등급 표시 (몬스터 위) + 팀 표시
         ctx.fillStyle = '#FFF';
-        ctx.font = '10px Arial';
+        ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(this.grade[0].toUpperCase(), this.x + this.width / 2, this.y - 15);
+        const teamIcon = this.team === 'player' ? '▶' : '◀';
+        ctx.fillText(teamIcon + this.grade[0].toUpperCase(), this.x + this.width / 2, this.y - 15);
+    }
+
+    /**
+     * 팀 색상 반환
+     */
+    getTeamColor(baseColor) {
+        return baseColor;
     }
 }
