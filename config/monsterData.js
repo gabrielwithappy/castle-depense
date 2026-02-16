@@ -35,16 +35,49 @@ export const MONSTER_STATS = {
         color: 0x9932CC,
         cost: 6
     },
-    legend: {
+    super_epic: {
+        width: 65,
+        height: 85,
+        speed: 33,
+        attackDamage: 80,
+        attackRange: 55,
+        attackCooldown: 1700,
+        hp: 450,
+        color: 0xFF1493,
+        cost: 8
+    },
+    mystic: {
+        width: 68,
+        height: 88,
+        speed: 32,
+        attackDamage: 100,
+        attackRange: 60,
+        attackCooldown: 1800,
+        hp: 550,
+        color: 0x00CED1,
+        cost: 10
+    },
+    legendary: {
         width: 70,
         height: 90,
         speed: 30,
-        attackDamage: 100,
-        attackRange: 60,
+        attackDamage: 120,
+        attackRange: 65,
         attackCooldown: 2000,
-        hp: 500,
+        hp: 650,
         color: 0xFFD700,
-        cost: 10
+        cost: 12
+    },
+    hero: {
+        width: 75,
+        height: 95,
+        speed: 28,
+        attackDamage: 150,
+        attackRange: 70,
+        attackCooldown: 2200,
+        hp: 800,
+        color: 0xFF4500,
+        cost: 15
     }
 };
 

@@ -20,6 +20,10 @@ export default class GameOverScene extends Phaser.Scene {
         // 반투명 배경
         this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8);
 
+        // 반응형 폰트 크기
+        const titleFontSize = Math.max(32, Math.min(64, width * 0.05));
+        const statsFontSize = Math.max(16, Math.min(24, width * 0.019));
+
         // 결과 텍스트
         let resultText, resultColor;
 
@@ -35,7 +39,7 @@ export default class GameOverScene extends Phaser.Scene {
         }
 
         const title = this.add.text(width / 2, height / 3, resultText, {
-            fontSize: '64px',
+            fontSize: `${titleFontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: resultColor,
             fontStyle: 'bold'
@@ -45,7 +49,7 @@ export default class GameOverScene extends Phaser.Scene {
         // 통계 표시
         const stats = this.add.text(width / 2, height / 2,
             `플레이어 HP: ${this.playerHp}\nAI HP: ${this.aiHp}`, {
-            fontSize: '24px',
+            fontSize: `${statsFontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
             align: 'center'
@@ -53,16 +57,24 @@ export default class GameOverScene extends Phaser.Scene {
         stats.setOrigin(0.5);
 
         // 재시작 버튼
-        this.createRestartButton(width / 2, height * 0.7);
+        this.createRestartButton(width, height);
     }
 
-    createRestartButton(x, y) {
-        const button = this.add.rectangle(x, y, 200, 60, 0x333333)
+    createRestartButton(width, height) {
+        // 반응형 버튼 크기
+        const buttonWidth = Math.max(180, Math.min(250, width * 0.2));
+        const buttonHeight = Math.max(50, Math.min(70, height * 0.1));
+        const fontSize = Math.max(20, Math.min(28, buttonHeight * 0.4));
+
+        const x = width / 2;
+        const y = height * 0.7;
+
+        const button = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0x333333)
             .setStrokeStyle(3, 0x4caf50)
             .setInteractive({ useHandCursor: true });
 
         const buttonText = this.add.text(x, y, '다시 시작', {
-            fontSize: '28px',
+            fontSize: `${fontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         });

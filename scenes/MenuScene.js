@@ -14,9 +14,13 @@ export default class MenuScene extends Phaser.Scene {
         // 배경
         this.add.rectangle(width / 2, height / 2, width, height, 0x1a1a2e);
 
+        // 반응형 폰트 크기 계산 (화면 크기 기준)
+        const titleFontSize = Math.max(32, Math.min(64, width * 0.05));
+        const subtitleFontSize = Math.max(16, Math.min(24, width * 0.019));
+
         // 타이틀
-        const title = this.add.text(width / 2, height / 3, '🏰 Castle Defense', {
-            fontSize: '64px',
+        const title = this.add.text(width / 2, height * 0.25, '🏰 Castle Defense', {
+            fontSize: `${titleFontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
@@ -24,8 +28,8 @@ export default class MenuScene extends Phaser.Scene {
         title.setOrigin(0.5);
 
         // 서브 타이틀
-        const subtitle = this.add.text(width / 2, height / 3 + 80, 'AI 난이도를 선택하세요', {
-            fontSize: '24px',
+        const subtitle = this.add.text(width / 2, height * 0.25 + titleFontSize + 20, 'AI 난이도를 선택하세요', {
+            fontSize: `${subtitleFontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#aaaaaa'
         });
@@ -36,28 +40,41 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     createLevelButtons(width, height) {
+        // 반응형 버튼 크기 계산 (모바일 최소 터치 영역 44px 보장)
+        const buttonWidth = Math.max(200, Math.min(300, width * 0.4));
+        const buttonHeight = Math.max(60, Math.min(80, height * 0.1));
+        const gap = Math.max(15, Math.min(30, height * 0.03));
+
+        // 세로 모드 감지 (높이가 너비보다 큰 경우)
+        const isPortrait = height > width;
+        const startY = isPortrait ? height * 0.45 : height * 0.5;
+
         const levels = [
-            { key: 'easy', label: '초급', color: 0x4caf50, y: height / 2 + 30 },
-            { key: 'normal', label: '중급', color: 0xff9800, y: height / 2 + 110 },
-            { key: 'hard', label: '고급', color: 0xf44336, y: height / 2 + 190 }
+            { key: 'easy', label: '초급', color: 0x4caf50, offset: 0 },
+            { key: 'normal', label: '중급', color: 0xff9800, offset: 1 },
+            { key: 'hard', label: '고급', color: 0xf44336, offset: 2 }
         ];
 
         levels.forEach(level => {
-            this.createButton(width / 2, level.y, level.label, level.color, () => {
+            const y = startY + level.offset * (buttonHeight + gap);
+            this.createButton(width / 2, y, level.label, level.color, buttonWidth, buttonHeight, () => {
                 this.startGame(level.key);
             });
         });
     }
 
-    createButton(x, y, text, color, callback) {
+    createButton(x, y, text, color, buttonWidth, buttonHeight, callback) {
+        // 반응형 폰트 크기 (버튼 높이 기준)
+        const fontSize = Math.max(20, Math.min(28, buttonHeight * 0.4));
+
         // 버튼 배경
-        const button = this.add.rectangle(x, y, 200, 60, 0x333333)
+        const button = this.add.rectangle(x, y, buttonWidth, buttonHeight, 0x333333)
             .setStrokeStyle(3, color)
             .setInteractive({ useHandCursor: true });
 
         // 버튼 텍스트
         const buttonText = this.add.text(x, y, text, {
-            fontSize: '28px',
+            fontSize: `${fontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         });

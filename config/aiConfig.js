@@ -5,20 +5,23 @@ export const AI_CONFIG = {
     easy: {
         name: '초급',
         spawnCooldown: 4000, // ms
-        availableGrades: ['common'],
-        decisionDelay: 500  // AI 반응 속도
+        availableGrades: ['common', 'rare', 'epic', 'super_epic'],
+        decisionDelay: 500,  // AI 반응 속도
+        maxEnergy: 30  // 에너지 최대값
     },
     normal: {
         name: '중급',
         spawnCooldown: 3000,
-        availableGrades: ['common', 'rare'],
-        decisionDelay: 300
+        availableGrades: ['common', 'rare', 'epic', 'super_epic', 'mystic'],
+        decisionDelay: 300,
+        maxEnergy: 40
     },
     hard: {
         name: '고급',
         spawnCooldown: 2000,
-        availableGrades: ['common', 'rare', 'epic', 'legend'],
-        decisionDelay: 100
+        availableGrades: ['common', 'rare', 'epic', 'super_epic', 'mystic', 'legendary', 'hero'],
+        decisionDelay: 100,
+        maxEnergy: 50
     }
 };
 

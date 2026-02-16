@@ -59,15 +59,34 @@ export default class GameScene extends Phaser.Scene {
         this.gameOver = false;
         this.winner = null;
 
-        // 에너지
+        // 에너지 (난이도별 최대값 적용)
         this.playerEnergy = ENERGY.INIT;
         this.aiEnergy = ENERGY.INIT;
+        this.maxEnergy = this.aiConfig.maxEnergy || ENERGY.MAX;
 
         // 타이머
         this.remainingTime = TIMER.TOTAL_TIME;
 
-        // 플레이어 덱
-        this.playerDeck = [...PLAYER_DECK];
+        // 플레이어 덱 (10개 몬스터, common~super_epic 랜덤)
+        this.playerDeck = this.generatePlayerDeck();
+
+        // 배틀필드 몬스터 수 추적 (요구사항: 동시에 7개까지만 존재 가능)
+        this.playerMonstersOnField = 0;
+        this.maxPlayerMonsters = 7;
+    }
+
+    generatePlayerDeck() {
+        const grades = ['common', 'rare', 'epic', 'super_epic'];
+        const types = ['attacker', 'defender', 'speeder'];
+        const deck = [];
+
+        for (let i = 0; i < 10; i++) {
+            const grade = grades[Math.floor(Math.random() * grades.length)];
+            const type = types[Math.floor(Math.random() * types.length)];
+            deck.push({ grade, type });
+        }
+
+        return deck;
     }
 
     createBackground(width, height) {
@@ -120,22 +139,37 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createUI(width, height) {
-        const padding = 20;
-        const fontSize = '24px';
-        const fontStyle = { fontSize, fontFamily: 'Arial', color: '#ffffff' };
+        // 반응형 패딩 및 폰트 크기
+        const padding = Math.max(10, Math.min(20, width * 0.015));
+        const baseFontSize = Math.max(16, Math.min(24, width * 0.019));
+        const timerFontSize = Math.max(20, Math.min(32, width * 0.025));
+
+        const fontStyle = {
+            fontSize: `${baseFontSize}px`,
+            fontFamily: 'Arial',
+            color: '#ffffff'
+        };
 
         // 플레이어 HP
         this.playerHpText = this.add.text(padding, padding, `HP: ${this.playerCastle.hp}`, fontStyle)
             .setDepth(DEPTH.UI);
 
         // 플레이어 에너지
-        this.energyText = this.add.text(padding, padding + 30, `⚡ ${Math.floor(this.playerEnergy)}`, fontStyle)
+        this.energyText = this.add.text(padding, padding + baseFontSize + 10, `⚡ ${Math.floor(this.playerEnergy)}`, fontStyle)
             .setDepth(DEPTH.UI);
+
+        // 배틀필드 몬스터 수 (플레이어)
+        this.monsterCountText = this.add.text(padding, padding + (baseFontSize + 10) * 2, `👾 ${this.playerMonstersOnField}/${this.maxPlayerMonsters}`, {
+            fontSize: `${baseFontSize}px`,
+            fontFamily: 'Arial',
+            color: '#00ff88'
+        }).setDepth(DEPTH.UI);
 
         // 타이머 (중앙)
         this.timerText = this.add.text(width / 2, padding, this.formatTime(this.remainingTime), {
-            ...fontStyle,
-            fontSize: '32px'
+            fontSize: `${timerFontSize}px`,
+            fontFamily: 'Arial',
+            color: '#ffffff'
         }).setOrigin(0.5, 0).setDepth(DEPTH.UI);
 
         // AI HP
@@ -146,11 +180,19 @@ export default class GameScene extends Phaser.Scene {
     createDeckUI(width, height) {
         // 카드 UI는 하단 패널 중앙에 배치
         const deckY = this.GAME_FIELD_HEIGHT + this.UI_PANEL_HEIGHT / 2;
-        const cardWidth = 70;
-        const cardHeight = 90;
-        const gap = 10;
+
+        // 반응형 카드 크기 계산 (모바일 터치 영역 고려)
+        const cardWidth = Math.max(60, Math.min(80, width * 0.055));
+        const cardHeight = Math.max(80, Math.min(100, cardWidth * 1.3));
+        const gap = Math.max(5, Math.min(15, width * 0.008));
+
         const totalWidth = this.playerDeck.length * (cardWidth + gap) - gap;
         const startX = (width - totalWidth) / 2;
+
+        // 반응형 폰트 크기
+        const gradeFontSize = Math.max(8, Math.min(12, cardWidth * 0.15));
+        const emojiFontSize = Math.max(20, Math.min(32, cardWidth * 0.4));
+        const costFontSize = Math.max(12, Math.min(18, cardWidth * 0.23));
 
         this.deckButtons = [];
 
@@ -158,7 +200,21 @@ export default class GameScene extends Phaser.Scene {
             common: '👻',
             rare: '👽',
             epic: '🤖',
-            legend: '🐲'
+            super_epic: '⚔️',
+            mystic: '🔮',
+            legendary: '🐲',
+            hero: '👑'
+        };
+
+        // 등급 색상 정의
+        const gradeColors = {
+            common: '#9e9e9e',
+            rare: '#4fc3f7',
+            epic: '#9c27b0',
+            super_epic: '#ff1493',
+            mystic: '#00ced1',
+            legendary: '#ffd700',
+            hero: '#ff4500'
         };
 
         this.playerDeck.forEach((slot, index) => {
@@ -171,14 +227,22 @@ export default class GameScene extends Phaser.Scene {
                 .setInteractive({ useHandCursor: true })
                 .setDepth(DEPTH.UI);
 
-            // 이모지
-            const emoji = this.add.text(x, deckY - 15, gradeEmojis[slot.grade] || '❓', {
-                fontSize: '28px'
+            // 등급 텍스트 (상단)
+            const gradeText = this.add.text(x, deckY - cardHeight * 0.38, slot.grade.toUpperCase(), {
+                fontSize: `${gradeFontSize}px`,
+                fontFamily: 'Arial',
+                color: gradeColors[slot.grade] || '#ffffff',
+                fontStyle: 'bold'
             }).setOrigin(0.5).setDepth(DEPTH.UI);
 
-            // 비용
-            const costText = this.add.text(x, deckY + 25, `${cost}⚡`, {
-                fontSize: '16px',
+            // 이모지 (중앙)
+            const emoji = this.add.text(x, deckY - cardHeight * 0.05, gradeEmojis[slot.grade] || '❓', {
+                fontSize: `${emojiFontSize}px`
+            }).setOrigin(0.5).setDepth(DEPTH.UI);
+
+            // 비용 (하단)
+            const costText = this.add.text(x, deckY + cardHeight * 0.32, `${cost}⚡`, {
+                fontSize: `${costFontSize}px`,
                 fontFamily: 'Arial',
                 color: '#ffffff'
             }).setOrigin(0.5).setDepth(DEPTH.UI);
@@ -192,7 +256,7 @@ export default class GameScene extends Phaser.Scene {
             card.on('pointerover', () => card.setFillStyle(0x555555));
             card.on('pointerout', () => card.setFillStyle(0x444444));
 
-            this.deckButtons.push({ card, emoji, costText, slot });
+            this.deckButtons.push({ card, gradeText, emoji, costText, slot });
         });
     }
 
@@ -271,15 +335,25 @@ export default class GameScene extends Phaser.Scene {
         const rate = isBoostTime ? ENERGY.BOOST_RATE : ENERGY.REGEN_RATE;
 
         // 0.1초마다 호출되므로 rate / 10
-        this.playerEnergy = Math.min(this.playerEnergy + rate / 10, ENERGY.MAX);
-        this.aiEnergy = Math.min(this.aiEnergy + rate / 10, ENERGY.MAX);
+        this.playerEnergy = Math.min(this.playerEnergy + rate / 10, this.maxEnergy);
+        this.aiEnergy = Math.min(this.aiEnergy + rate / 10, this.maxEnergy);
     }
 
     updateUI() {
         this.playerHpText.setText(`HP: ${Math.max(0, this.playerCastle.hp)}`);
         this.aiHpText.setText(`HP: ${Math.max(0, this.aiCastle.hp)}`);
         this.energyText.setText(`⚡ ${Math.floor(this.playerEnergy)}`);
+        this.monsterCountText.setText(`👾 ${this.playerMonstersOnField}/${this.maxPlayerMonsters}`);
         this.timerText.setText(this.formatTime(this.remainingTime));
+
+        // 몬스터 수에 따라 색상 변경
+        if (this.playerMonstersOnField >= this.maxPlayerMonsters) {
+            this.monsterCountText.setColor('#ff4444'); // 빨강 (가득 참)
+        } else if (this.playerMonstersOnField >= this.maxPlayerMonsters - 2) {
+            this.monsterCountText.setColor('#ffaa00'); // 주황 (거의 가득)
+        } else {
+            this.monsterCountText.setColor('#00ff88'); // 초록 (여유 있음)
+        }
 
         // 부스트 타임에 타이머 색상 변경
         if (this.remainingTime <= ENERGY.BOOST_TIME) {
@@ -288,11 +362,15 @@ export default class GameScene extends Phaser.Scene {
     }
 
     updateDeckUI() {
-        this.deckButtons.forEach(({ card, slot }) => {
+        this.deckButtons.forEach(({ card, gradeText, slot }) => {
             const cost = getMonsterCost(slot.grade);
             const affordable = this.playerEnergy >= cost;
+            const canSpawn = this.playerMonstersOnField < this.maxPlayerMonsters;
 
-            card.setAlpha(affordable ? 1 : 0.5);
+            // 비용 부족 또는 배틀필드 가득 찰을 때 투명도 감소
+            const alpha = (affordable && canSpawn) ? 1 : 0.5;
+            card.setAlpha(alpha);
+            if (gradeText) gradeText.setAlpha(alpha);
         });
     }
 
@@ -308,10 +386,17 @@ export default class GameScene extends Phaser.Scene {
         const slot = this.playerDeck[slotIndex];
         if (!slot) return;
 
+        // 배틀필드 몬스터 수 확인 (요구사항: 동시에 7개까지만 존재 가능)
+        if (this.playerMonstersOnField >= this.maxPlayerMonsters) {
+            console.log(`배틀필드 가득! (${this.maxPlayerMonsters}개) - 몬스터가 죽으면 다시 소환 가능`);
+            return;
+        }
+
         const cost = getMonsterCost(slot.grade);
         if (this.playerEnergy < cost) return;
 
         this.playerEnergy -= cost;
+        this.playerMonstersOnField++;
 
         // 몬스터는 게임 필드 바닥에 소환
         const x = this.playerCastle.x + CASTLE.WIDTH + 20;
@@ -321,7 +406,18 @@ export default class GameScene extends Phaser.Scene {
         this.playerMonsters.add(monster);
         this.add.existing(monster);
 
-        console.log(`플레이어 몬스터 소환: ${slot.grade} ${slot.type}`);
+        console.log(`플레이어 몬스터 소환: ${slot.grade} ${slot.type} (필드: ${this.playerMonstersOnField}/${this.maxPlayerMonsters})`);
+    }
+
+    onMonsterDeath(team) {
+        console.log(`[GameScene] onMonsterDeath 호출됨 - team: ${team}, 현재 필드: ${this.playerMonstersOnField}`);
+
+        // 몬스터 사망 시 배틀필드 카운트 감소
+        if (team === 'player') {
+            const before = this.playerMonstersOnField;
+            this.playerMonstersOnField = Math.max(0, this.playerMonstersOnField - 1);
+            console.log(`[GameScene] 플레이어 몬스터 사망 - 필드: ${before} → ${this.playerMonstersOnField} (최대: ${this.maxPlayerMonsters})`);
+        }
     }
 
     spawnAIMonster() {
@@ -414,7 +510,8 @@ export default class GameScene extends Phaser.Scene {
             const travelTime = (dist / 350) * 1000; // 350 = projectile speed
 
             this.time.delayedCall(travelTime, () => {
-                if (closest && closest.hp > 0 && !closest.isDead) {
+                if (closest && closest.hp > 0 && closest.state !== 'dead') {
+                    console.log(`[Castle] ${castle.team} 크리스탈이 ${closest.team} 몬스터 공격 (HP: ${closest.hp})`);
                     closest.takeDamage(CASTLE.ATTACK_DAMAGE);
                 }
             });

@@ -150,10 +150,14 @@ export default class Monster extends Phaser.GameObjects.Container {
     takeDamage(amount) {
         if (this.state === 'dead') return;
 
+        const beforeHp = this.hp;
         this.hp -= amount;
+
+        console.log(`[Monster] ${this.team} 몬스터 데미지 받음: ${amount} (HP: ${beforeHp} → ${this.hp})`);
 
         if (this.hp <= 0) {
             this.hp = 0;
+            console.log(`[Monster] ${this.team} 몬스터 HP 0 도달 - die() 호출 예정`);
             this.die();
         }
 
@@ -178,7 +182,19 @@ export default class Monster extends Phaser.GameObjects.Container {
     }
 
     die() {
+        if (this.state === 'dead') return; // 중복 호출 방지
+
         this.state = 'dead';
+
+        console.log(`[Monster] ${this.team} 몬스터 사망 - die() 호출됨`);
+
+        // 씬에 몬스터 사망 알림 (페이드아웃 전에 즉시 호출)
+        if (this.scene && typeof this.scene.onMonsterDeath === 'function') {
+            this.scene.onMonsterDeath(this.team);
+            console.log(`[Monster] onMonsterDeath(${this.team}) 호출 완료`);
+        } else {
+            console.warn(`[Monster] onMonsterDeath 함수를 찾을 수 없음!`);
+        }
 
         // 페이드아웃 후 제거
         this.scene.tweens.add({
