@@ -46,8 +46,13 @@ export default class Monster extends Phaser.GameObjects.Container {
         // 깊이 설정
         this.setDepth(DEPTH.MONSTER);
 
-        // Container의 기본 경계 박스 비활성화 (외각 테두리 제거)
-        this.setDisplayOrigin(0, 0);
+        // Container의 원점 설정 (좌상단)
+        if (typeof this.setOrigin === 'function') {
+            this.setOrigin(0, 0);
+        }
+        if (typeof this.setDisplayOrigin === 'function') {
+            this.setDisplayOrigin(0, 0);
+        }
 
         // 물리 바디 설정
         try {
