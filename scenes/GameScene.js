@@ -1,6 +1,6 @@
 import { GAME, CASTLE, ENERGY, TIMER, COLORS, DEPTH } from '../config/constants.js';
 import { AI_CONFIG, PLAYER_DECK } from '../config/aiConfig.js';
-import { getMonsterCost } from '../config/monsterData.js';
+import { getMonsterCost, calculateMonsterStats } from '../config/monsterData.js';
 import Castle from '../entities/Castle.js';
 import Monster from '../entities/Monster.js';
 import Projectile from '../entities/Projectile.js';
@@ -419,15 +419,16 @@ export default class GameScene extends Phaser.Scene {
         this.playerEnergy -= cost;
         this.playerMonstersOnField++;
 
-        // 몬스터는 게임 필드 바닥에 소환
+        // 몬스터는 게임 필드 바닥에 소환 (몬스터 높이의 절반만큼 위로)
         const x = this.playerCastle.x + CASTLE.WIDTH + 20;
-        const y = this.GROUND_Y;
+        const monsterHeight = calculateMonsterStats(slot.grade, slot.type).height;
+        const y = this.GROUND_Y - monsterHeight / 2;
 
         const monster = new Monster(this, x, y, 'player', slot.grade, slot.type);
         this.playerMonsters.add(monster);
         this.add.existing(monster);
 
-        console.log(`플레이어 몬스터 소환: ${slot.grade} ${slot.type} (필드: ${this.playerMonstersOnField}/${this.maxPlayerMonsters})`);
+        console.log(`플레이어 몬스터 소환: ${slot.grade} ${slot.type} at (${x}, ${y}) (필드: ${this.playerMonstersOnField}/${this.maxPlayerMonsters})`);
     }
 
     onMonsterDeath(team) {
@@ -470,15 +471,16 @@ export default class GameScene extends Phaser.Scene {
         this.aiEnergy -= cost;
         this.aiMonstersOnField++;
 
-        // AI 몬스터도 게임 필드 바닥에 소환
+        // AI 몬스터도 게임 필드 바닥에 소환 (몬스터 높이의 절반만큼 위로)
         const x = this.aiCastle.x - 20;
-        const y = this.GROUND_Y;
+        const monsterHeight = calculateMonsterStats(grade, type).height;
+        const y = this.GROUND_Y - monsterHeight / 2;
 
         const monster = new Monster(this, x, y, 'ai', grade, type);
         this.aiMonsters.add(monster);
         this.add.existing(monster);
 
-        console.log(`AI 몬스터 소환: ${grade} ${type} (필드: ${this.aiMonstersOnField}/${this.maxAiMonsters})`);
+        console.log(`AI 몬스터 소환: ${grade} ${type} at (${x}, ${y}) (필드: ${this.aiMonstersOnField}/${this.maxAiMonsters})`);
     }
 
     castleAttacks() {
