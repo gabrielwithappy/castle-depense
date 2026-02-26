@@ -198,62 +198,199 @@ export default class Monster extends Entity {
     }
 
     /**
-     * 캔버스에 몬스터 그리기
+     * 캔버스에 몬스터 그리기 (타입별 시각적 차별화)
      * @param {CanvasRenderingContext2D} ctx - 캔버스 컨텍스트
      */
     draw(ctx) {
         if (this.state === 'dead') return;
 
-        // 팀별 색상 오버레이 적용
-        // Player: 파란 계열, AI: 빨간 계열
-        let bodyColor;
-        if (this.team === 'player') {
-            // 플레이어 몬스터는 파란색 계열
-            bodyColor = this.getTeamColor('#3388FF');
+        // 팀별 색상
+        const teamColor = this.team === 'player' ? '#3388FF' : '#FF4444';
+        const borderColor = this.team === 'player' ? '#00DDFF' : '#FF6600';
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+
+        // 타입별로 다른 형태 그리기
+        if (this.type === 'attacker') {
+            this.drawAttackerShape(ctx, centerX, centerY, teamColor, borderColor);
+        } else if (this.type === 'defender') {
+            this.drawDefenderShape(ctx, centerX, centerY, teamColor, borderColor);
         } else {
-            // AI 몬스터는 빨간색 계열  
-            bodyColor = this.getTeamColor('#FF4444');
+            this.drawSpeederShape(ctx, centerX, centerY, teamColor, borderColor);
         }
 
-        // 기본 몬스터 바디
+        // 등급 표시 (별 개수)
+        this.drawGradeStars(ctx, centerX, this.y - 15);
+
+        // 체력바
+        this.drawHealthBar(ctx);
+
+        // 팀 아이콘 + 등급 텍스트
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        const teamIcon = this.team === 'player' ? '▶' : '◀';
+        ctx.fillText(teamIcon + this.grade[0].toUpperCase(), centerX, this.y - 25);
+    }
+
+    /**
+     * Attacker 모양 그리기 (뾰족한 피크)
+     */
+    drawAttackerShape(ctx, centerX, centerY, bodyColor, borderColor) {
+        const bodyWidth = this.width * 0.8;
+        const bodyHeight = this.height * 0.7;
+        const peakWidth = this.width * 0.3;
+        const peakHeight = this.height * 0.4;
+        const peakColor = this.team === 'player' ? '#5AACFF' : '#FF7777';
+
+        // 메인 바디
         ctx.fillStyle = bodyColor;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.fillRect(centerX - bodyWidth / 2, centerY - bodyHeight / 2, bodyWidth, bodyHeight);
 
-        // 등급에 따른 내부 패턴 (구분용 아이콘)
-        ctx.fillStyle = this.color;
-        const patternSize = Math.min(this.width, this.height) * 0.4;
-        ctx.fillRect(
-            this.x + (this.width - patternSize) / 2,
-            this.y + (this.height - patternSize) / 2,
-            patternSize,
-            patternSize
-        );
+        // 상단 뾰족한 부분
+        ctx.fillStyle = peakColor;
+        ctx.fillRect(centerX - bodyWidth * 0.2 - peakWidth / 2, centerY - bodyHeight / 2 - peakHeight, peakWidth, peakHeight);
+        ctx.fillRect(centerX + bodyWidth * 0.2 - peakWidth / 2, centerY - bodyHeight / 2 - peakHeight, peakWidth, peakHeight);
 
-        // 테두리 (팀 색상)
-        ctx.strokeStyle = this.team === 'player' ? '#0066CC' : '#CC0000';
+        // 테두리
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(centerX - bodyWidth / 2, centerY - bodyHeight / 2, bodyWidth, bodyHeight);
+    }
+
+    /**
+     * Defender 모양 그리기 (원형 + 방패)
+     */
+    drawDefenderShape(ctx, centerX, centerY, bodyColor, borderColor) {
+        const bodyRadius = this.width * 0.35;
+        const shieldWidth = this.width * 0.7;
+        const shieldHeight = this.height * 0.5;
+        const shieldColor = this.team === 'player' ? '#2266BB' : '#DD3333';
+
+        // 원형 바디
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, bodyRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 아래쪽 방패
+        ctx.fillStyle = shieldColor;
+        ctx.fillRect(centerX - shieldWidth / 2, centerY, shieldWidth, shieldHeight);
+
+        // 테두리 (원형)
+        ctx.strokeStyle = borderColor;
         ctx.lineWidth = 3;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, bodyRadius, 0, Math.PI * 2);
+        ctx.stroke();
 
-        // 체력바 배경
+        // 방패 테두리
+        ctx.strokeRect(centerX - shieldWidth / 2, centerY, shieldWidth, shieldHeight);
+    }
+
+    /**
+     * Speeder 모양 그리기 (다이아몬드 + 속도라인)
+     */
+    drawSpeederShape(ctx, centerX, centerY, bodyColor, borderColor) {
+        const diamondWidth = this.width * 0.7;
+        const diamondHeight = this.height * 0.7;
+        const lineColor = this.team === 'player' ? '#88DDFF' : '#FF9944';
+
+        // 다이아몬드 바디
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - diamondHeight / 2); // 위
+        ctx.lineTo(centerX + diamondWidth / 2, centerY); // 우
+        ctx.lineTo(centerX, centerY + diamondHeight / 2); // 하
+        ctx.lineTo(centerX - diamondWidth / 2, centerY); // 좌
+        ctx.closePath();
+        ctx.fill();
+
+        // 속도 라인 (뒤쪽)
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2;
+        const lineLength = this.width * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(centerX - diamondWidth / 2 - lineLength, centerY - this.height * 0.15);
+        ctx.lineTo(centerX - diamondWidth / 2, centerY - this.height * 0.15);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - diamondWidth / 2 - lineLength, centerY + this.height * 0.15);
+        ctx.lineTo(centerX - diamondWidth / 2, centerY + this.height * 0.15);
+        ctx.stroke();
+
+        // 테두리
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - diamondHeight / 2);
+        ctx.lineTo(centerX + diamondWidth / 2, centerY);
+        ctx.lineTo(centerX, centerY + diamondHeight / 2);
+        ctx.lineTo(centerX - diamondWidth / 2, centerY);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    /**
+     * 등급별 별 개수 그리기
+     */
+    drawGradeStars(ctx, centerX, y) {
+        const starCount = { 'common': 1, 'rare': 2, 'epic': 3, 'legend': 4 }[this.grade] || 1;
+        const starSize = 4;
+        const starGap = 6;
+        const totalWidth = starCount * starSize + (starCount - 1) * starGap;
+        const startX = centerX - totalWidth / 2;
+
+        ctx.fillStyle = this.team === 'player' ? '#88DDFF' : '#FF9944';
+        for (let i = 0; i < starCount; i++) {
+            const x = startX + i * (starSize + starGap);
+            this.drawStar(ctx, x, y, starSize);
+        }
+    }
+
+    /**
+     * 별 모양 그리기
+     */
+    drawStar(ctx, x, y, size) {
+        const spikes = 5;
+        const outerRadius = size;
+        const innerRadius = size * 0.4;
+
+        ctx.beginPath();
+        for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const angle = (i * Math.PI) / spikes - Math.PI / 2;
+            const px = x + radius * Math.cos(angle);
+            const py = y + radius * Math.sin(angle);
+
+            if (i === 0) {
+                ctx.moveTo(px, py);
+            } else {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    /**
+     * 체력바 그리기
+     */
+    drawHealthBar(ctx) {
         const hpBarWidth = this.width;
         const hpBarHeight = 6;
         const hpBarX = this.x;
         const hpBarY = this.y - 10;
 
+        // 배경
         ctx.fillStyle = '#333';
         ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
 
-        // 체력바 (현재 HP)
+        // 현재 HP
         const hpRatio = this.hp / this.maxHp;
         ctx.fillStyle = hpRatio > 0.5 ? '#00FF00' : hpRatio > 0.2 ? '#FFFF00' : '#FF0000';
         ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpRatio, hpBarHeight);
-
-        // 등급 표시 (몬스터 위) + 팀 표시
-        ctx.fillStyle = '#FFF';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        const teamIcon = this.team === 'player' ? '▶' : '◀';
-        ctx.fillText(teamIcon + this.grade[0].toUpperCase(), this.x + this.width / 2, this.y - 15);
     }
 
     /**
