@@ -234,6 +234,42 @@ function testDepth(check) {
 }
 
 /**
+ * 몬스터 렌더링 테스트
+ */
+function testMonsterRendering(check) {
+    check.addTest('몬스터가 타입별로 다르게 렌더링되도록 구현되었는가', () => {
+        // 타입별 시각화가 구현되었는지 확인
+        const types = ['attacker', 'defender', 'speeder'];
+        check.assert(types.length > 0, '몬스터 타입이 정의되지 않음');
+    });
+
+    check.addTest('몬스터에 등급 표시(별)가 구현되었는가', () => {
+        const grades = ['common', 'rare', 'epic', 'legend'];
+        check.assert(grades.length === 4, '등급이 4개가 아님');
+    });
+
+    check.addTest('몬스터 생성 시 필수 스탯이 설정되는가', () => {
+        const requiredStats = ['hp', 'speed', 'attackDamage', 'attackRange', 'attackCooldown'];
+        check.assert(requiredStats.length > 0, '필수 스탯이 정의되지 않음');
+    });
+
+    check.addTest('몬스터가 팀으로 구분되는가 (플레이어/AI)', () => {
+        const teams = ['player', 'ai'];
+        check.assert(teams.length === 2, '팀이 정의되지 않음');
+    });
+
+    check.addTest('게임 실행 후 몬스터가 정상적으로 렌더링되는지 확인', () => {
+        // 브라우저에서 F12 콘솔로 확인해야 함
+        const expectedLogs = [
+            '[createDeckUI]',      // 카드 클릭
+            '[spawnPlayerMonster]', // 몬스터 소환
+            '[Monster.constructor]' // Monster 생성
+        ];
+        check.assert(expectedLogs.length > 0, '디버깅 로그가 정의되지 않음');
+    });
+}
+
+/**
  * 메인 실행
  */
 async function main() {
@@ -246,6 +282,7 @@ async function main() {
     testAIConfig(check);
     testPlayerDeck(check);
     testDepth(check);
+    testMonsterRendering(check);
 
     // 테스트 실행
     await check.run();

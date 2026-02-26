@@ -28,7 +28,7 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },  // 중력 없음 (횡스크롤)
-            debug: true         // 디버그 모드 켜기
+            debug: false        // 디버그 모드 끄기
         }
     },
 
