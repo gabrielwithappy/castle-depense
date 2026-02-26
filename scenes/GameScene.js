@@ -213,6 +213,12 @@ export default class GameScene extends Phaser.Scene {
             hero: '👑'
         };
 
+        const typeSymbols = {
+            attacker: '⚔️',
+            defender: '🛡️',
+            speeder: '⚡'
+        };
+
         // 등급 색상 정의
         const gradeColors = {
             common: '#9e9e9e',
@@ -228,9 +234,9 @@ export default class GameScene extends Phaser.Scene {
             const x = startX + index * (cardWidth + gap) + cardWidth / 2;
             const cost = getMonsterCost(slot.grade);
 
-            // 카드 배경
-            const card = this.add.rectangle(x, deckY, cardWidth, cardHeight, 0x444444)
-                .setStrokeStyle(2, 0x666666)
+            // 카드 배경 (팀 색상 테마)
+            const card = this.add.rectangle(x, deckY, cardWidth, cardHeight, 0x2a3a5a)
+                .setStrokeStyle(2, 0x00DDFF)
                 .setInteractive({ useHandCursor: true })
                 .setDepth(DEPTH.UI);
 
@@ -247,11 +253,16 @@ export default class GameScene extends Phaser.Scene {
                 fontSize: `${emojiFontSize}px`
             }).setOrigin(0.5).setDepth(DEPTH.UI);
 
+            // 타입 심볼 (중앙 아래)
+            const typeSymbol = this.add.text(x, deckY + cardHeight * 0.08, typeSymbols[slot.type] || '❓', {
+                fontSize: `${costFontSize * 0.8}px`
+            }).setOrigin(0.5).setDepth(DEPTH.UI);
+
             // 비용 (하단)
             const costText = this.add.text(x, deckY + cardHeight * 0.32, `${cost}⚡`, {
                 fontSize: `${costFontSize}px`,
                 fontFamily: 'Arial',
-                color: '#ffffff'
+                color: '#88DDFF'
             }).setOrigin(0.5).setDepth(DEPTH.UI);
 
             // 클릭 이벤트
@@ -259,11 +270,17 @@ export default class GameScene extends Phaser.Scene {
                 this.spawnPlayerMonster(index);
             });
 
-            // 호버 효과
-            card.on('pointerover', () => card.setFillStyle(0x555555));
-            card.on('pointerout', () => card.setFillStyle(0x444444));
+            // 호버 효과 강화
+            card.on('pointerover', () => {
+                card.setFillStyle(0x3a4a7a);
+                card.setStrokeStyle(3, 0x00FFFF);
+            });
+            card.on('pointerout', () => {
+                card.setFillStyle(0x2a3a5a);
+                card.setStrokeStyle(2, 0x00DDFF);
+            });
 
-            this.deckButtons.push({ card, gradeText, emoji, costText, slot });
+            this.deckButtons.push({ card, gradeText, emoji, typeSymbol, costText, slot });
         });
     }
 
@@ -464,8 +481,19 @@ export default class GameScene extends Phaser.Scene {
 
         // 랜덤 등급 선택
         const grade = affordable[Math.floor(Math.random() * affordable.length)];
-        const types = ['attacker', 'defender', 'speeder'];
-        const type = types[Math.floor(Math.random() * types.length)];
+
+        // AI 전략: 등급에 따라 타입 선택
+        // - common/rare: 공격형 주력 (70% 확률)
+        // - epic: 방어형으로 탱킹 (50% 확률)
+        // - legend: 빠른 타입으로 스피드 플레이
+        let type;
+        if (grade === 'legend') {
+            type = 'speeder';
+        } else if (grade === 'epic') {
+            type = Math.random() > 0.5 ? 'defender' : 'attacker';
+        } else {
+            type = Math.random() > 0.3 ? 'attacker' : 'defender';
+        }
 
         const cost = getMonsterCost(grade);
         this.aiEnergy -= cost;
