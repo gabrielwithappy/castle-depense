@@ -12,7 +12,7 @@ export const AI_CONFIG = {
     normal: {
         name: '중급',
         spawnCooldown: 3000,
-        availableGrades: ['common', 'rare', 'epic', 'super_epic', 'mystic'],
+        availableGrades: ['common', 'rare', 'epic', 'super_epic', 'mystic', 'legendary'],
         decisionDelay: 300,
         maxEnergy: 40
     },

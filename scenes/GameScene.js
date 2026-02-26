@@ -73,18 +73,25 @@ export default class GameScene extends Phaser.Scene {
         // 배틀필드 몬스터 수 추적 (요구사항: 동시에 7개까지만 존재 가능)
         this.playerMonstersOnField = 0;
         this.maxPlayerMonsters = 7;
+
+        // AI 배틀필드 몬스터 수 추적
+        this.aiMonstersOnField = 0;
+        this.maxAiMonsters = 7;
     }
 
     generatePlayerDeck() {
-        const grades = ['common', 'rare', 'epic', 'super_epic'];
+        // AI와 동일한 등급 사용 (난이도별 사용 가능한 모든 등급)
+        const gradeOrder = this.aiConfig.availableGrades;
         const types = ['attacker', 'defender', 'speeder'];
         const deck = [];
 
-        for (let i = 0; i < 10; i++) {
-            const grade = grades[Math.floor(Math.random() * grades.length)];
-            const type = types[Math.floor(Math.random() * types.length)];
-            deck.push({ grade, type });
-        }
+        // 등급별 2장씩 생성, 등급 순서대로 정렬
+        gradeOrder.forEach(grade => {
+            for (let i = 0; i < 2; i++) {
+                const type = types[Math.floor(Math.random() * types.length)];
+                deck.push({ grade, type });
+            }
+        });
 
         return deck;
     }
@@ -324,7 +331,21 @@ export default class GameScene extends Phaser.Scene {
         this.remainingTime--;
 
         if (this.remainingTime <= 0) {
-            this.endGame('time');
+            // 시간 종료: HP 비교로 승자 결정
+            const playerHp = Math.max(0, this.playerCastle.hp);
+            const aiHp = Math.max(0, this.aiCastle.hp);
+
+            let winner;
+            if (playerHp > aiHp) {
+                winner = 'player';
+            } else if (aiHp > playerHp) {
+                winner = 'ai';
+            } else {
+                winner = 'draw';
+            }
+
+            console.log(`시간 종료! 플레이어 HP: ${playerHp}, AI HP: ${aiHp} → 승자: ${winner}`);
+            this.endGame(winner);
         }
     }
 
@@ -410,18 +431,26 @@ export default class GameScene extends Phaser.Scene {
     }
 
     onMonsterDeath(team) {
-        console.log(`[GameScene] onMonsterDeath 호출됨 - team: ${team}, 현재 필드: ${this.playerMonstersOnField}`);
-
         // 몬스터 사망 시 배틀필드 카운트 감소
         if (team === 'player') {
             const before = this.playerMonstersOnField;
             this.playerMonstersOnField = Math.max(0, this.playerMonstersOnField - 1);
             console.log(`[GameScene] 플레이어 몬스터 사망 - 필드: ${before} → ${this.playerMonstersOnField} (최대: ${this.maxPlayerMonsters})`);
+        } else if (team === 'ai') {
+            const before = this.aiMonstersOnField;
+            this.aiMonstersOnField = Math.max(0, this.aiMonstersOnField - 1);
+            console.log(`[GameScene] AI 몬스터 사망 - 필드: ${before} → ${this.aiMonstersOnField} (최대: ${this.maxAiMonsters})`);
         }
     }
 
     spawnAIMonster() {
         if (this.gameOver) return;
+
+        // 배틀필드 몬스터 수 제한 체크
+        if (this.aiMonstersOnField >= this.maxAiMonsters) {
+            console.log(`AI 배틀필드 가득! (${this.maxAiMonsters}개) - 소환 스킵`);
+            return;
+        }
 
         const availableGrades = this.aiConfig.availableGrades;
 
@@ -439,6 +468,7 @@ export default class GameScene extends Phaser.Scene {
 
         const cost = getMonsterCost(grade);
         this.aiEnergy -= cost;
+        this.aiMonstersOnField++;
 
         // AI 몬스터도 게임 필드 바닥에 소환
         const x = this.aiCastle.x - 20;
@@ -448,7 +478,7 @@ export default class GameScene extends Phaser.Scene {
         this.aiMonsters.add(monster);
         this.add.existing(monster);
 
-        console.log(`AI 몬스터 소환: ${grade} ${type}`);
+        console.log(`AI 몬스터 소환: ${grade} ${type} (필드: ${this.aiMonstersOnField}/${this.maxAiMonsters})`);
     }
 
     castleAttacks() {
