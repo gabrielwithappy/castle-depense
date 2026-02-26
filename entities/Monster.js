@@ -346,6 +346,11 @@ export default class Monster extends Phaser.GameObjects.Container {
     die() {
         this.state = 'dead';
 
+        // 몬스터 사망 알림 (카운트 감소)
+        if (this.scene && typeof this.scene.onMonsterDeath === 'function') {
+            this.scene.onMonsterDeath(this.team);
+        }
+
         // 타입별 죽음 애니메이션
         if (this.type === 'attacker') {
             // Attacker: 빠른 폭발 효과
