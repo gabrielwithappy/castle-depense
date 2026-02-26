@@ -62,17 +62,17 @@ export default class Monster extends Phaser.GameObjects.Container {
 
         console.log(`[Monster] Container now has ${this.list.length} children after drawing body`);
 
-        // 체력 바 배경
-        this.hpBarBg = this.scene.add.rectangle(0, h / 2 + 10, w, 6, 0x333333);
+        // 체력 바 배경 (몬스터 위쪽)
+        this.hpBarBg = this.scene.add.rectangle(0, -h / 2 - 5, w, 6, 0x333333);
         this.add(this.hpBarBg);
 
-        // 체력 바
-        this.hpBar = this.scene.add.rectangle(0, h / 2 + 10, w, 6, 0x00FF00);
+        // 체력 바 (몬스터 위쪽)
+        this.hpBar = this.scene.add.rectangle(0, -h / 2 - 5, w, 6, 0x00FF00);
         this.add(this.hpBar);
 
-        // 등급 텍스트
+        // 등급 텍스트 (체력 바 위쪽)
         const teamIcon = this.team === 'player' ? '▶' : '◀';
-        this.gradeText = this.scene.add.text(0, -h / 2 - 15, `${teamIcon}${this.grade[0].toUpperCase()}`, {
+        this.gradeText = this.scene.add.text(0, -h / 2 - 20, `${teamIcon}${this.grade[0].toUpperCase()}`, {
             fontSize: '12px',
             fontFamily: 'Arial',
             color: '#ffffff',
