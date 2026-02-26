@@ -42,24 +42,8 @@ export default class Monster extends Phaser.GameObjects.Container {
     }
 
     createVisuals() {
-        // 팀별 기본 색상
-        const teamColor = this.team === 'player' ? 0x3388FF : 0xFF4444;
-
-        // 몬스터 바디
-        this.bodyRect = this.scene.add.rectangle(0, -this.height / 2, this.width, this.height, teamColor);
-        this.add(this.bodyRect);
-
-        // 등급 표시 (내부 사각형)
-        const patternSize = Math.min(this.width, this.height) * 0.4;
-        this.gradeIndicator = this.scene.add.rectangle(0, -this.height / 2, patternSize, patternSize, this.color);
-        this.add(this.gradeIndicator);
-
-        // 테두리
-        const borderColor = this.team === 'player' ? 0x0066CC : 0xCC0000;
-        this.border = this.scene.add.rectangle(0, -this.height / 2, this.width, this.height)
-            .setStrokeStyle(3, borderColor)
-            .setFillStyle();
-        this.add(this.border);
+        // 타입별 몬스터 형태 그리기
+        this.drawMonsterShape();
 
         // 체력 바 배경
         this.hpBarBg = this.scene.add.rectangle(0, -this.height - 5, this.width, 6, 0x333333);
@@ -78,6 +62,98 @@ export default class Monster extends Phaser.GameObjects.Container {
             fontStyle: 'bold'
         }).setOrigin(0.5);
         this.add(this.gradeText);
+    }
+
+    drawMonsterShape() {
+        const w = this.width;
+        const h = this.height;
+        const baseY = -h / 2;
+        const gradeColor = this.color;
+
+        if (this.type === 'attacker') {
+            // Attacker: 예리한 뿔, 공격적인 모양
+            this.drawAttacker(w, h, baseY, gradeColor);
+        } else if (this.type === 'defender') {
+            // Defender: 튼튼한 방패 모양
+            this.drawDefender(w, h, baseY, gradeColor);
+        } else if (this.type === 'speeder') {
+            // Speeder: 날렵한 모양
+            this.drawSpeeder(w, h, baseY, gradeColor);
+        }
+    }
+
+    drawAttacker(w, h, baseY, color) {
+        // 몸통 (상단)
+        this.scene.add.rectangle(0, baseY + h * 0.25, w * 0.8, h * 0.4, color).setDepth(-1);
+        this.add(this.scene.add.rectangle(0, baseY + h * 0.25, w * 0.8, h * 0.4, color));
+
+        // 하단
+        this.scene.add.rectangle(0, baseY + h * 0.65, w * 0.7, h * 0.3, color).setDepth(-1);
+        this.add(this.scene.add.rectangle(0, baseY + h * 0.65, w * 0.7, h * 0.3, color));
+
+        // 왼쪽 뿔
+        this.add(this.scene.add.polygon(
+            -w * 0.35, baseY + h * 0.1,
+            [[-5, -8], [-2, 3], [3, -2]]
+        ).setFillStyle(0xFF6666));
+
+        // 오른쪽 뿔
+        this.add(this.scene.add.polygon(
+            w * 0.35, baseY + h * 0.1,
+            [[5, -8], [2, 3], [-3, -2]]
+        ).setFillStyle(0xFF6666));
+
+        // 눈 (아래쪽)
+        this.add(this.scene.add.circle(0, baseY + h * 0.4, 3, 0xFFFFFF));
+    }
+
+    drawDefender(w, h, baseY, color) {
+        // 큰 몸통 (방패 모양)
+        this.scene.add.rectangle(0, baseY + h * 0.3, w * 0.9, h * 0.55, color).setDepth(-1);
+        this.add(this.scene.add.rectangle(0, baseY + h * 0.3, w * 0.9, h * 0.55, color));
+
+        // 하단 다리
+        this.add(this.scene.add.rectangle(-w * 0.2, baseY + h * 0.7, w * 0.3, h * 0.2, color));
+        this.add(this.scene.add.rectangle(w * 0.2, baseY + h * 0.7, w * 0.3, h * 0.2, color));
+
+        // 방어 패턴 (가로 줄)
+        for (let i = 0; i < 3; i++) {
+            this.add(this.scene.add.rectangle(0, baseY + h * 0.15 + i * 0.15 * h, w * 0.7, 2, 0x8888FF));
+        }
+
+        // 눈 (중앙)
+        this.add(this.scene.add.circle(-w * 0.15, baseY + h * 0.2, 3, 0xFFFFFF));
+        this.add(this.scene.add.circle(w * 0.15, baseY + h * 0.2, 3, 0xFFFFFF));
+    }
+
+    drawSpeeder(w, h, baseY, color) {
+        // 앞쪽 뾰족한 부분
+        this.add(this.scene.add.polygon(
+            -w * 0.2, baseY + h * 0.25,
+            [[-8, -6], [-1, 0], [-8, 6]]
+        ).setFillStyle(color));
+
+        // 메인 바디 (동적 곡선 모양)
+        this.scene.add.rectangle(0, baseY + h * 0.35, w * 0.7, h * 0.35, color).setDepth(-1);
+        this.add(this.scene.add.rectangle(0, baseY + h * 0.35, w * 0.7, h * 0.35, color));
+
+        // 뒤쪽 날개 (왼쪽)
+        this.add(this.scene.add.polygon(
+            w * 0.25, baseY + h * 0.2,
+            [[0, -5], [6, 0], [3, 5]]
+        ).setFillStyle(0xFF88FF));
+
+        // 뒤쪽 날개 (오른쪽)
+        this.add(this.scene.add.polygon(
+            w * 0.25, baseY + h * 0.5,
+            [[0, -5], [6, 0], [3, 5]]
+        ).setFillStyle(0xFF88FF));
+
+        // 속도감 선 (흘러가는 효과)
+        this.add(this.scene.add.rectangle(-w * 0.3, baseY + h * 0.35, w * 0.3, 2, 0xFF88FF));
+
+        // 눈 (앞쪽)
+        this.add(this.scene.add.circle(-w * 0.1, baseY + h * 0.25, 2, 0xFFFFFF));
     }
 
     preUpdate(time, delta) {
