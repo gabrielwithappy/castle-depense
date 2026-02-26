@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Visual Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #16213e;
+            border-radius: 5px;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #0f3460;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2>🎮 Monster Visual Test</h2>
+        <p>각 타입별 몬스터가 제대로 표시되는지 테스트합니다.</p>
+        <p>보여야 할 것:</p>
+        <ul>
+            <li><strong>Attacker:</strong> 뿔이 있는 공격형 (빨간 뿔)</li>
+            <li><strong>Defender:</strong> 다리와 가로 줄 패턴이 있는 방어형</li>
+            <li><strong>Speeder:</strong> 날개가 있는 속도형 (분홍 날개)</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        // Constants
+        const DEPTH = {
+            BACKGROUND: 0,
+            MONSTER: 10,
+            UI: 100
+        };
+
+        // Monster Data
+        const MONSTER_STATS = {
+            common: { width: 40, height: 60, color: 0x8B4513, hp: 100, attackDamage: 20, speed: 50, attackRange: 30, attackCooldown: 1000 },
+            rare: { width: 50, height: 70, color: 0x4169E1, hp: 200, attackDamage: 40, speed: 40, attackRange: 40, attackCooldown: 1200 },
+            epic: { width: 60, height: 80, color: 0x9932CC, hp: 350, attackDamage: 60, speed: 35, attackRange: 50, attackCooldown: 1500 }
+        };
+
+        const MONSTER_TYPE_MODIFIERS = {
+            attacker: { attackDamage: 1.5, hp: 0.8, speed: 1.0 },
+            defender: { attackDamage: 0.8, hp: 1.5, speed: 0.8 },
+            speeder: { attackDamage: 0.7, hp: 0.6, speed: 1.8 }
+        };
+
+        function calculateMonsterStats(grade, type) {
+            const baseStats = MONSTER_STATS[grade] || MONSTER_STATS.common;
+            const modifiers = MONSTER_TYPE_MODIFIERS[type] || MONSTER_TYPE_MODIFIERS.attacker;
+            return {
+                ...baseStats,
+                hp: Math.floor(baseStats.hp * modifiers.hp),
+                attackDamage: Math.floor(baseStats.attackDamage * modifiers.attackDamage),
+                speed: baseStats.speed * modifiers.speed
+            };
+        }
+
+        // Monster Class
+        class TestMonster extends Phaser.GameObjects.Container {
+            constructor(scene, x, y, team, grade, type) {
+                super(scene, x, y);
+
+                this.scene = scene;
+                this.team = team;
+                this.grade = grade;
+                this.type = type;
+
+                const stats = calculateMonsterStats(grade, type);
+                this.hp = stats.hp;
+                this.maxHp = stats.hp;
+                this.width = stats.width;
+                this.height = stats.height;
+                this.color = stats.color;
+
+                console.log(`Creating ${team} ${grade} ${type} monster at (${x}, ${y})`);
+                console.log(`Size: ${this.width}x${this.height}, Color: ${this.color.toString(16)}`);
+
+                this.createVisuals();
+                this.setDepth(DEPTH.MONSTER);
+            }
+
+            createVisuals() {
+                const w = this.width;
+                const h = this.height;
+                const color = this.color;
+
+                console.log(`Creating visuals for ${this.type}: w=${w}, h=${h}, color=${color.toString(16)}`);
+
+                // 타입별 몬스터 형태 그리기
+                if (this.type === 'attacker') {
+                    this.createAttackerVisuals(w, h, color);
+                } else if (this.type === 'defender') {
+                    this.createDefenderVisuals(w, h, color);
+                } else if (this.type === 'speeder') {
+                    this.createSpeederVisuals(w, h, color);
+                }
+
+                // 체력 바 배경
+                this.hpBarBg = this.scene.add.rectangle(0, h / 2 + 10, w, 6, 0x333333);
+                this.add(this.hpBarBg);
+
+                // 체력 바
+                this.hpBar = this.scene.add.rectangle(0, h / 2 + 10, w, 6, 0x00FF00);
+                this.add(this.hpBar);
+
+                // 타입 라벨
+                const label = this.scene.add.text(0, -h / 2 - 15, `${this.type}`, {
+                    fontSize: '12px',
+                    fontFamily: 'Arial',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                this.add(label);
+
+                console.log(`Added ${this.list.length} children to container`);
+            }
+
+            createAttackerVisuals(w, h, color) {
+                console.log('Creating Attacker visuals');
+
+                // 몸통 (상단)
+                const body = this.scene.add.rectangle(0, -h * 0.15, w * 0.75, h * 0.35, color);
+                this.add(body);
+
+                // 하단
+                const bottom = this.scene.add.rectangle(0, h * 0.25, w * 0.65, h * 0.25, color);
+                this.add(bottom);
+
+                // 왼쪽 뿔
+                const leftHorn = this.scene.add.polygon(-w * 0.35, -h * 0.25, [[-4, -6], [-1, 2], [3, -1]]);
+                leftHorn.setFillStyle(0xFF6666);
+                this.add(leftHorn);
+
+                // 오른쪽 뿔
+                const rightHorn = this.scene.add.polygon(w * 0.35, -h * 0.25, [[4, -6], [1, 2], [-3, -1]]);
+                rightHorn.setFillStyle(0xFF6666);
+                this.add(rightHorn);
+
+                // 눈
+                const eye = this.scene.add.circle(0, -h * 0.05, 2.5, 0xFFFFFF);
+                this.add(eye);
+            }
+
+            createDefenderVisuals(w, h, color) {
+                console.log('Creating Defender visuals');
+
+                // 큰 몸통 (방패 모양)
+                const body = this.scene.add.rectangle(0, -h * 0.1, w * 0.85, h * 0.5, color);
+                this.add(body);
+
+                // 하단 다리 (왼쪽)
+                const leftLeg = this.scene.add.rectangle(-w * 0.2, h * 0.3, w * 0.25, h * 0.15, color);
+                this.add(leftLeg);
+
+                // 하단 다리 (오른쪽)
+                const rightLeg = this.scene.add.rectangle(w * 0.2, h * 0.3, w * 0.25, h * 0.15, color);
+                this.add(rightLeg);
+
+                // 방어 패턴 (가로 줄)
+                for (let i = 0; i < 3; i++) {
+                    const line = this.scene.add.rectangle(0, -h * 0.25 + i * 0.2 * h, w * 0.6, 2, 0x8888FF);
+                    this.add(line);
+                }
+
+                // 눈 (왼쪽)
+                const leftEye = this.scene.add.circle(-w * 0.15, -h * 0.15, 2.5, 0xFFFFFF);
+                this.add(leftEye);
+
+                // 눈 (오른쪽)
+                const rightEye = this.scene.add.circle(w * 0.15, -h * 0.15, 2.5, 0xFFFFFF);
+                this.add(rightEye);
+            }
+
+            createSpeederVisuals(w, h, color) {
+                console.log('Creating Speeder visuals');
+
+                // 앞쪽 뾰족한 부분
+                const front = this.scene.add.polygon(-w * 0.25, 0, [[-6, -5], [0, 0], [-6, 5]]);
+                front.setFillStyle(color);
+                this.add(front);
+
+                // 메인 바디
+                const body = this.scene.add.rectangle(0, 0, w * 0.65, h * 0.3, color);
+                this.add(body);
+
+                // 뒤쪽 날개 (위쪽)
+                const topWing = this.scene.add.polygon(w * 0.2, -h * 0.15, [[0, -4], [5, 0], [2, 4]]);
+                topWing.setFillStyle(0xFF88FF);
+                this.add(topWing);
+
+                // 뒤쪽 날개 (아래쪽)
+                const bottomWing = this.scene.add.polygon(w * 0.2, h * 0.15, [[0, -4], [5, 0], [2, 4]]);
+                bottomWing.setFillStyle(0xFF88FF);
+                this.add(bottomWing);
+
+                // 속도감 선 (흘러가는 효과)
+                const speedLine = this.scene.add.rectangle(-w * 0.3, 0, w * 0.3, 2, 0xFF88FF);
+                this.add(speedLine);
+
+                // 눈
+                const eye = this.scene.add.circle(-w * 0.15, -h * 0.1, 2, 0xFFFFFF);
+                this.add(eye);
+            }
+        }
+
+        // Test Scene
+        class TestScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'TestScene' });
+            }
+
+            create() {
+                const { width, height } = this.scale;
+
+                // 배경
+                this.add.rectangle(width / 2, height / 2, width, height, 0x1a1a2e);
+
+                // 타이틀
+                this.add.text(width / 2, 30, 'Monster Visual Test', {
+                    fontSize: '24px',
+                    fontFamily: 'Arial',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+
+                // 테스트할 몬스터 배열
+                const monsters = [
+                    { grade: 'common', type: 'attacker', x: 150, y: 150, team: 'player' },
+                    { grade: 'rare', type: 'defender', x: 350, y: 150, team: 'player' },
+                    { grade: 'epic', type: 'speeder', x: 550, y: 150, team: 'player' },
+
+                    { grade: 'common', type: 'defender', x: 150, y: 300, team: 'ai' },
+                    { grade: 'rare', type: 'speeder', x: 350, y: 300, team: 'ai' },
+                    { grade: 'epic', type: 'attacker', x: 550, y: 300, team: 'ai' }
+                ];
+
+                console.log('Creating test monsters...');
+
+                monsters.forEach(config => {
+                    const monster = new TestMonster(
+                        this,
+                        config.x,
+                        config.y,
+                        config.team,
+                        config.grade,
+                        config.type
+                    );
+                    this.add.existing(monster);
+
+                    // 라벨
+                    this.add.text(config.x, config.y + 60,
+                        `${config.grade}\n${config.type}\n${config.team}`,
+                        {
+                            fontSize: '10px',
+                            fontFamily: 'Arial',
+                            color: '#aaaaaa',
+                            align: 'center'
+                        }
+                    ).setOrigin(0.5);
+                });
+
+                console.log('Test scene created successfully');
+            }
+        }
+
+        // Game Config
+        const config = {
+            type: Phaser.AUTO,
+            width: 700,
+            height: 400,
+            backgroundColor: '#1a1a2e',
+            scene: TestScene
+        };
+
+        const game = new Phaser.Game(config);
+    </script>
+</body>
+</html>

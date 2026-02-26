@@ -33,6 +33,9 @@ export default class GameOverScene extends Phaser.Scene {
         } else if (this.winner === 'ai') {
             resultText = '☠️ DEFEAT ☠️';
             resultColor = '#f44336';
+        } else if (this.winner === 'draw') {
+            resultText = '⏰ DRAW ⏰';
+            resultColor = '#ff9800';
         } else {
             resultText = '⏰ TIME OUT ⏰';
             resultColor = '#ff9800';

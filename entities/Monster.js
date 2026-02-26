@@ -46,14 +46,21 @@ export default class Monster extends Phaser.GameObjects.Container {
         const h = this.height;
         const color = this.color;
 
+        console.log(`[Monster] Creating visuals for ${this.team} ${this.grade} ${this.type}: w=${w}, h=${h}, color=0x${color.toString(16)}`);
+
         // 타입별 몬스터 형태 그리기
         if (this.type === 'attacker') {
+            console.log('[Monster] Drawing attacker visuals');
             this.createAttackerVisuals(w, h, color);
         } else if (this.type === 'defender') {
+            console.log('[Monster] Drawing defender visuals');
             this.createDefenderVisuals(w, h, color);
         } else if (this.type === 'speeder') {
+            console.log('[Monster] Drawing speeder visuals');
             this.createSpeederVisuals(w, h, color);
         }
+
+        console.log(`[Monster] Container now has ${this.list.length} children after drawing body`);
 
         // 체력 바 배경
         this.hpBarBg = this.scene.add.rectangle(0, h / 2 + 10, w, 6, 0x333333);

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: enable higher-grade monster cards for player based on difficulty level\n\n- 중급\\(normal\\) 난이도에 ''legendary'' 등급 추가\n- 플레이어 덱이 AI와 동일한 난이도별 등급 사용하도록 수정\n- 초급: common, rare, epic, super_epic\n- 중급: common, rare, epic, super_epic, mystic, legendary\n- 고급: common, rare, epic, super_epic, mystic, legendary, hero\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(start test-monster.html)",
+      "Bash(start index.html)",
+      "Bash(timeout 2 cmd /c \"start http://localhost:8080/test-monster.html\")"
+    ]
+  }
+}
