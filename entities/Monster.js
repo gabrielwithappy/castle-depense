@@ -8,6 +8,8 @@ export default class Monster extends Phaser.GameObjects.Container {
     constructor(scene, x, y, team, grade = 'common', type = 'attacker') {
         super(scene, x, y);
 
+        console.log(`[Monster.constructor] 생성 시작: team=${team}, grade=${grade}, type=${type}, pos=(${x},${y})`);
+
         this.scene = scene;
         this.team = team;
         this.grade = grade;
@@ -15,6 +17,8 @@ export default class Monster extends Phaser.GameObjects.Container {
 
         // 스탯 계산
         const stats = calculateMonsterStats(grade, type);
+        console.log(`[Monster.constructor] 스탯 계산 완료:`, stats);
+
         this.hp = stats.hp;
         this.maxHp = stats.hp;
         this.speed = stats.speed;
@@ -31,7 +35,13 @@ export default class Monster extends Phaser.GameObjects.Container {
         this.target = null;
 
         // 시각적 요소 생성
-        this.createVisuals();
+        try {
+            this.createVisuals();
+            console.log(`[Monster.constructor] createVisuals 완료`);
+        } catch (e) {
+            console.error(`[Monster.constructor] createVisuals 에러:`, e);
+            throw e;
+        }
 
         // 깊이 설정
         this.setDepth(DEPTH.MONSTER);
@@ -40,8 +50,16 @@ export default class Monster extends Phaser.GameObjects.Container {
         this.setDisplayOrigin(0, 0);
 
         // 물리 바디 설정
-        scene.physics.world.enable(this);
-        this.body.setSize(this.width, this.height);
+        try {
+            scene.physics.world.enable(this);
+            this.body.setSize(this.width, this.height);
+            console.log(`[Monster.constructor] 물리 바디 설정 완료`);
+        } catch (e) {
+            console.error(`[Monster.constructor] 물리 바디 설정 에러:`, e);
+            throw e;
+        }
+
+        console.log(`[Monster.constructor] 생성 완료`);
     }
 
     createVisuals() {

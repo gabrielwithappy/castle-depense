@@ -1,0 +1,24 @@
+{
+  "name": "castle-defense",
+  "version": "1.0.0",
+  "description": "Tower Defense 게임 - Phaser 3 기반",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/gameHealthCheck.js",
+    "test:watch": "nodemon --exec \"npm run test\"",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "game",
+    "phaser",
+    "tower-defense",
+    "castle-defense"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

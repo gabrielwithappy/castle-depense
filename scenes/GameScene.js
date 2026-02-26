@@ -267,6 +267,7 @@ export default class GameScene extends Phaser.Scene {
 
             // 클릭 이벤트
             card.on('pointerdown', () => {
+                console.log(`[createDeckUI] 카드 클릭: 슬롯 ${index}, 등급: ${slot.grade}, 타입: ${slot.type}`);
                 this.spawnPlayerMonster(index);
             });
 
@@ -419,19 +420,34 @@ export default class GameScene extends Phaser.Scene {
     }
 
     spawnPlayerMonster(slotIndex) {
-        if (this.gameOver) return;
+        console.log(`[spawnPlayerMonster] 호출됨: slotIndex=${slotIndex}`);
+
+        if (this.gameOver) {
+            console.log(`[spawnPlayerMonster] 게임 오버 - 스킵`);
+            return;
+        }
 
         const slot = this.playerDeck[slotIndex];
-        if (!slot) return;
+        if (!slot) {
+            console.log(`[spawnPlayerMonster] 슬롯이 없음: ${slotIndex}`);
+            return;
+        }
+
+        console.log(`[spawnPlayerMonster] 슬롯 찾음: ${slot.grade} ${slot.type}`);
 
         // 배틀필드 몬스터 수 확인 (요구사항: 동시에 7개까지만 존재 가능)
         if (this.playerMonstersOnField >= this.maxPlayerMonsters) {
-            console.log(`배틀필드 가득! (${this.maxPlayerMonsters}개) - 몬스터가 죽으면 다시 소환 가능`);
+            console.log(`[spawnPlayerMonster] 배틀필드 가득! (${this.playerMonstersOnField}/${this.maxPlayerMonsters})`);
             return;
         }
 
         const cost = getMonsterCost(slot.grade);
-        if (this.playerEnergy < cost) return;
+        console.log(`[spawnPlayerMonster] 비용: ${cost}, 현재 에너지: ${this.playerEnergy}`);
+
+        if (this.playerEnergy < cost) {
+            console.log(`[spawnPlayerMonster] 에너지 부족! (${this.playerEnergy} < ${cost})`);
+            return;
+        }
 
         this.playerEnergy -= cost;
         this.playerMonstersOnField++;
@@ -441,9 +457,16 @@ export default class GameScene extends Phaser.Scene {
         const monsterHeight = calculateMonsterStats(slot.grade, slot.type).height;
         const y = this.GROUND_Y - monsterHeight / 2;
 
+        console.log(`[spawnPlayerMonster] 위치 계산: x=${x}, y=${y}, monsterHeight=${monsterHeight}`);
+
         const monster = new Monster(this, x, y, 'player', slot.grade, slot.type);
+        console.log(`[spawnPlayerMonster] Monster 인스턴스 생성 완료`);
+
         this.playerMonsters.add(monster);
+        console.log(`[spawnPlayerMonster] 그룹에 추가 완료`);
+
         this.add.existing(monster);
+        console.log(`[spawnPlayerMonster] 씬에 추가 완료`);
 
         console.log(`플레이어 몬스터 소환: ${slot.grade} ${slot.type} at (${x}, ${y}) (필드: ${this.playerMonstersOnField}/${this.maxPlayerMonsters})`);
     }
