@@ -1,0 +1,3 @@
+[mcp_servers.browsermcp]
+command = "node"
+args = [".\\node_modules\\@browsermcp\\mcp\\dist\\index.js"]

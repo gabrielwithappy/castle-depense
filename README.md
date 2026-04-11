@@ -1,142 +1,74 @@
-# Castle Defense - Phaser.js Game
+# Castle Defense
 
-> 타워 디펜스 장르의 웹 게임 - Phaser.js로 구현
+성을 지키는 전투 게임 프로젝트입니다.
 
-[![Play Game](https://img.shields.io/badge/Play-Game-brightgreen)](https://gabrielwithappy.github.io/castle-depense/)
+플레이어는 몬스터를 소환해서 상대 성을 공격하고, 자기 성은 지켜야 합니다.
 
-## 🎮 게임 플레이
+## 바로 해보기
 
-**[여기를 클릭하여 게임을 플레이하세요!](https://gabrielwithappy.github.io/castle-depense/)**
+게임 주소:
 
-### 게임 방법
-- **목표**: AI 성을 파괴하세요!
-- **조작**: 하단 카드를 클릭하여 몬스터 소환
-- **에너지**: 시간에 따라 자동 충전되며, 몬스터 소환에 필요
-- **제한 시간**: 3분 안에 승부를 결정하세요
+- `https://gabrielwithappy.github.io/castle-depense/`
 
-### 난이도
-- **초급**: 느린 소환 속도
-- **중급**: 보통 속도
-- **고급**: 빠른 소환 속도 + 강력한 몬스터
+## 이 프로젝트는 어떤 게임인가요?
 
----
+- 왼쪽에는 플레이어 성이 있습니다.
+- 오른쪽에는 AI 성이 있습니다.
+- 몬스터를 소환해서 상대 성을 먼저 부수면 이깁니다.
 
-## 🚀 기술 스택
+## 로컬에서 실행하기
 
-- **Phaser 3.x**: HTML5 게임 엔진
-- **JavaScript (ES6+)**: 모듈 시스템
-- **HTML5 Canvas**: 렌더링
-- **GitHub Pages**: 정적 호스팅
+### 1. 프로젝트 받기
 
----
-
-## 📁 프로젝트 구조
-
-```
-castle-depense/
-├── index.html           # 게임 진입점
-├── main.js              # Phaser Config
-├── config/              # 게임 설정 (상수, 몬스터 데이터)
-├── scenes/              # Phaser 씬 (Boot, Menu, Game, GameOver)
-├── entities/            # 게임 엔티티 (Castle, Monster, Projectile)
-├── src/                 # 개발 소스 (원본)
-└── docs/                # 프로젝트 문서
-```
-
----
-
-## 🛠️ 로컬 실행 방법
-
-### 1. 저장소 클론
 ```bash
 git clone https://github.com/gabrielwithappy/castle-depense.git
 cd castle-depense
 ```
 
-### 2. 로컬 서버 실행
+### 2. 로컬 서버 실행하기
+
 ```bash
-# Python 3.x
 python -m http.server 8080
-
-# 또는 Node.js (http-server 사용)
-npx http-server -p 8080
 ```
 
-### 3. 브라우저에서 실행
-```
+### 3. 브라우저에서 열기
+
+```text
 http://localhost:8080
 ```
 
----
+## 프로젝트 문서는 어디에 있나요?
 
-## 📖 개발 문서
+모든 설명 문서는 `docs` 폴더에 있습니다.
 
-자세한 개발 과정 및 기술 문서는 [`docs/` 폴더](./docs/)를 참조하세요:
+- [문서 안내서](D:/01_PRJ/castle-depense/docs/README.md)
+- [게임 설명](D:/01_PRJ/castle-depense/docs/game/game.md)
+- [설계 설명](D:/01_PRJ/castle-depense/docs/design/design.md)
+- [작업 안내](D:/01_PRJ/castle-depense/docs/work/work.md)
+- [배포 안내](D:/01_PRJ/castle-depense/docs/deploy/deploy.md)
 
-- [요구사항 명세](./docs/requirements.md)
-- [아키텍처 설계](./docs/architecture.md)
-- [Phaser.js 마이그레이션 계획](./docs/phaser_migration_plan.md)
+## 무엇을 수정할 때 어디를 보면 되나요?
 
----
+- 게임 규칙을 바꿀 때: `docs/game/game.md`
+- 화면이나 UI를 바꿀 때: `docs/game/game.md`
+- 코드 구조를 바꿀 때: `docs/design/design.md`
+- 지금 해야 할 일을 볼 때: `docs/work/work.md`
+- 배포 방법을 볼 때: `docs/deploy/deploy.md`
 
-## ✨ 주요 기능
+## 프로젝트 구조
 
-- ✅ **모바일 친화적**: 반응형 스케일 매니저
-- ✅ **AI 전투**: 3단계 난이도
-- ✅ **카드 덱 시스템**: 전략적 몬스터 소환
-- ✅ **시각 효과**: 크리스탈 투사체, 애니메이션
-- ✅ **에너지 시스템**: 자동 충전
-
----
-
-## 🔧 개발
-
-### 테스트 실행
-모든 수정 후 게임이 정상동작하는지 검증하세요:
-
-```bash
-npm test
+```text
+castle-depense/
+├── index.html
+├── style.css
+├── js/
+├── test/
+└── docs/
 ```
 
-성공 메시지:
-```
-🎉 모든 테스트 통과! 게임이 정상동작합니다.
-```
+## 한 줄 정리
 
-### 디버깅
-카드 클릭 문제 등을 추적할 때는 [DEBUG.md](./DEBUG.md)를 참조하세요:
-
-```bash
-# 게임 실행 후 브라우저 개발자 도구(F12)에서 콘솔 확인
-# 상세한 디버깅 로그가 출력됩니다
-```
-
-### 파일 수정 후 배포
-```bash
-# src/ 폴더에서 개발 후
-# 루트로 복사 (배포용)
-Copy-Item -Path src/* -Destination ./ -Recurse -Force
-
-# 테스트 실행
-npm test
-
-# Git 커밋 & 푸시
-git add -A
-git commit -m "feat: your feature"
-git push origin main
-```
-
-GitHub Pages는 자동으로 업데이트됩니다 (1~2분 소요).
-
----
-
-## 📝 라이선스
-
-MIT License
-
----
-
-## 👨‍💻 개발자
-
-**Gabriel**
-- GitHub: [@gabrielwithappy](https://github.com/gabrielwithappy)
+게임 내용은 `docs/game`,
+코드 구조는 `docs/design`,
+할 일은 `docs/work`,
+배포는 `docs/deploy`를 보면 됩니다.

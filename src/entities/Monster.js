@@ -1,24 +1,16 @@
 import { DEPTH } from '../config/constants.js';
-import { calculateMonsterStats, MONSTER_STATS } from '../config/monsterData.js';
+import { calculateMonsterStats } from '../config/monsterData.js';
 
-/**
- * Monster 클래스 - Phaser.GameObjects.Container 기반
- */
 export default class Monster extends Phaser.GameObjects.Container {
     constructor(scene, x, y, team, grade = 'common', type = 'attacker') {
         super(scene, x, y);
-
-        console.log(`[Monster.constructor] 생성 시작: team=${team}, grade=${grade}, type=${type}, pos=(${x},${y})`);
 
         this.scene = scene;
         this.team = team;
         this.grade = grade;
         this.type = type;
 
-        // 스탯 계산
         const stats = calculateMonsterStats(grade, type);
-        console.log(`[Monster.constructor] 스탯 계산 완료:`, stats);
-
         this.hp = stats.hp;
         this.maxHp = stats.hp;
         this.speed = stats.speed;
@@ -28,59 +20,36 @@ export default class Monster extends Phaser.GameObjects.Container {
         this.width = stats.width;
         this.height = stats.height;
         this.color = stats.color;
+        this.visualParts = [];
 
-        // 상태
-        this.state = 'moving'; // 'moving', 'attacking', 'dead'
+        this.state = 'moving';
         this.canAttack = true;
         this.target = null;
+        this.groundContactY = this.height / 2 - 2;
 
-        // 시각적 요소 생성
-        try {
-            this.createVisuals();
-            console.log(`[Monster.constructor] createVisuals 완료`);
-        } catch (e) {
-            console.error(`[Monster.constructor] createVisuals 에러:`, e);
-            throw e;
-        }
-
-        // 깊이 설정
+        this.createVisuals();
+        this.groundContactY = this.calculateGroundContactY();
         this.setDepth(DEPTH.MONSTER);
 
-        // 물리 바디 설정
-        try {
-            scene.physics.world.enable(this);
-            this.body.setSize(this.width, this.height);
-            console.log(`[Monster.constructor] 물리 바디 설정 완료`);
-        } catch (e) {
-            console.error(`[Monster.constructor] 물리 바디 설정 에러:`, e);
-            throw e;
-        }
-
-        console.log(`[Monster.constructor] 생성 완료`);
+        scene.physics.world.enable(this);
+        this.body.setSize(this.width, this.height);
     }
 
     createVisuals() {
-        // 팀별 기본 색상
-        const teamColor = this.team === 'player' ? 0x3388FF : 0xFF4444;
-        const borderColor = this.team === 'player' ? 0x00DDFF : 0xFF6600;
-        const glowColor = this.team === 'player' ? 0x88DDFF : 0xFF9944;
+        const teamColor = this.team === 'player' ? 0x3388ff : 0xff4444;
+        const borderColor = this.team === 'player' ? 0x00ddff : 0xff6600;
+        const glowColor = this.team === 'player' ? 0x88ddff : 0xff9944;
 
-        // 타입별 시각적 특징 생성
         this.createMonsterShape(teamColor, borderColor, glowColor);
-
-        // 등급 표시 (별 개수)
         this.createGradeIndicator(glowColor);
 
-        // 체력 바 배경
         this.hpBarBg = this.scene.add.rectangle(0, -this.height - 8, this.width, 6, 0x333333);
         this.add(this.hpBarBg);
 
-        // 체력 바
-        this.hpBar = this.scene.add.rectangle(0, -this.height - 8, this.width, 6, 0x00FF00);
+        this.hpBar = this.scene.add.rectangle(0, -this.height - 8, this.width, 6, 0x00ff00);
         this.add(this.hpBar);
 
-        // 팀 아이콘 + 등급 텍스트
-        const teamIcon = this.team === 'player' ? '▶' : '◀';
+        const teamIcon = this.team === 'player' ? 'P' : 'A';
         this.gradeText = this.scene.add.text(0, -this.height - 18, `${teamIcon}${this.grade[0].toUpperCase()}`, {
             fontSize: '12px',
             fontFamily: 'Arial',
@@ -92,115 +61,152 @@ export default class Monster extends Phaser.GameObjects.Container {
 
     createMonsterShape(teamColor, borderColor, glowColor) {
         if (this.type === 'attacker') {
-            // 🗡️ Attacker: 뾰족한 삼각형 모양
             this.createAttackerShape(teamColor, borderColor);
         } else if (this.type === 'defender') {
-            // 🛡️ Defender: 둥근 방패 모양
             this.createDefenderShape(teamColor, borderColor);
         } else {
-            // ⚡ Speeder: 길쭉한 다이아몬드 모양
             this.createSpeederShape(teamColor, borderColor);
         }
 
-        // 글로우 효과 추가 (등급에 따라 강도 조절)
         const glowStrength = this.getGlowStrength();
         if (glowStrength > 0) {
             this.createGlowEffect(glowColor, glowStrength);
         }
     }
 
-    createAttackerShape(teamColor, borderColor) {
-        // 메인 바디 (사각형)
-        this.bodyRect = this.scene.add.rectangle(0, 0, this.width * 0.8, this.height * 0.7, teamColor);
-        this.add(this.bodyRect);
+    trackVisualPart(part) {
+        this.visualParts.push(part);
+        return part;
+    }
 
-        // 상단 뾰족한 부분 (삼각형 모양의 두 개 사각형)
+    calculateGroundContactY() {
+        if (this.visualParts.length === 0) {
+            return this.height / 2 - 2;
+        }
+
+        let bottom = this.height / 2;
+
+        this.visualParts.forEach((part) => {
+            const bounds = part.getBounds();
+            bottom = Math.max(bottom, bounds.bottom - this.y);
+        });
+
+        return bottom;
+    }
+
+    createAttackerShape(teamColor, borderColor) {
+        const bodyCenterY = this.height * 0.15;
+        const bodyWidth = this.width * 0.8;
+        const bodyHeight = this.height * 0.7;
         const peakWidth = this.width * 0.3;
         const peakHeight = this.height * 0.4;
-        const peakColor = this.team === 'player' ? 0x5AACFF : 0xFF7777;
+        const peakColor = this.team === 'player' ? 0x5aacff : 0xff7777;
 
-        this.peak1 = this.scene.add.rectangle(
-            -this.width * 0.2,
-            -this.height * 0.5,
-            peakWidth,
-            peakHeight,
-            peakColor
+        this.bodyRect = this.trackVisualPart(
+            this.scene.add.rectangle(0, bodyCenterY, bodyWidth, bodyHeight, teamColor)
+        );
+        this.add(this.bodyRect);
+
+        this.peak1 = this.trackVisualPart(
+            this.scene.add.rectangle(
+                -this.width * 0.2,
+                bodyCenterY - this.height * 0.5,
+                peakWidth,
+                peakHeight,
+                peakColor
+            )
         );
         this.add(this.peak1);
 
-        this.peak2 = this.scene.add.rectangle(
-            this.width * 0.2,
-            -this.height * 0.5,
-            peakWidth,
-            peakHeight,
-            peakColor
+        this.peak2 = this.trackVisualPart(
+            this.scene.add.rectangle(
+                this.width * 0.2,
+                bodyCenterY - this.height * 0.5,
+                peakWidth,
+                peakHeight,
+                peakColor
+            )
         );
         this.add(this.peak2);
 
-        // 테두리
-        this.border = this.scene.add.rectangle(0, 0, this.width * 0.8, this.height * 0.7)
-            .setStrokeStyle(2, borderColor)
-            .setFillStyle();
+        this.border = this.trackVisualPart(
+            this.scene.add.rectangle(0, bodyCenterY, bodyWidth, bodyHeight)
+                .setStrokeStyle(2, borderColor)
+                .setFillStyle()
+        );
         this.add(this.border);
     }
 
     createDefenderShape(teamColor, borderColor) {
-        // 메인 바디 (원형에 가까운 대원)
         const centerRadius = this.width * 0.35;
-        this.bodyCircle = this.scene.add.circle(0, 0, centerRadius, teamColor);
+        const circleCenterY = this.height * 0.05;
+        const shieldCenterY = this.height * 0.22;
+        const shieldColor = this.team === 'player' ? 0x2266bb : 0xdd3333;
+
+        this.bodyCircle = this.trackVisualPart(
+            this.scene.add.circle(0, circleCenterY, centerRadius, teamColor)
+        );
         this.add(this.bodyCircle);
 
-        // 아래쪽 방패 모양
-        const shieldColor = this.team === 'player' ? 0x2266BB : 0xDD3333;
-        this.shield = this.scene.add.rectangle(0, this.height * 0.2, this.width * 0.7, this.height * 0.5, shieldColor);
+        this.shield = this.trackVisualPart(
+            this.scene.add.rectangle(0, shieldCenterY, this.width * 0.7, this.height * 0.5, shieldColor)
+        );
         this.add(this.shield);
 
-        // 테두리 (굵은 방어적 테두리)
-        this.border = this.scene.add.circle(0, 0, centerRadius)
-            .setStrokeStyle(3, borderColor)
-            .setFillStyle();
+        this.border = this.trackVisualPart(
+            this.scene.add.circle(0, circleCenterY, centerRadius)
+                .setStrokeStyle(3, borderColor)
+                .setFillStyle()
+        );
         this.add(this.border);
 
-        // 방패 테두리
-        this.shieldBorder = this.scene.add.rectangle(0, this.height * 0.2, this.width * 0.7, this.height * 0.5)
-            .setStrokeStyle(3, borderColor)
-            .setFillStyle();
+        this.shieldBorder = this.trackVisualPart(
+            this.scene.add.rectangle(0, shieldCenterY, this.width * 0.7, this.height * 0.5)
+                .setStrokeStyle(3, borderColor)
+                .setFillStyle()
+        );
         this.add(this.shieldBorder);
     }
 
     createSpeederShape(teamColor, borderColor) {
-        // 메인 바디 (길쭉한 다이아몬드)
+        const bodyCenterY = this.height * 0.15;
         const points = [
-            new Phaser.Geom.Point(0, -this.height * 0.35),      // 위
-            new Phaser.Geom.Point(this.width * 0.35, 0),         // 우
-            new Phaser.Geom.Point(0, this.height * 0.35),        // 하
-            new Phaser.Geom.Point(-this.width * 0.35, 0)         // 좌
+            new Phaser.Geom.Point(0, bodyCenterY - this.height * 0.35),
+            new Phaser.Geom.Point(this.width * 0.35, bodyCenterY),
+            new Phaser.Geom.Point(0, bodyCenterY + this.height * 0.35),
+            new Phaser.Geom.Point(-this.width * 0.35, bodyCenterY)
         ];
 
-        this.bodyDiamond = this.scene.add.polygon(0, 0, points, teamColor);
+        this.bodyDiamond = this.trackVisualPart(
+            this.scene.add.polygon(0, 0, points, teamColor)
+        );
         this.add(this.bodyDiamond);
 
-        // 속도 라인 (뒤쪽)
-        const lineColor = this.team === 'player' ? 0x88DDFF : 0xFF9944;
-        this.speedLine1 = this.scene.add.rectangle(-this.width * 0.4, -this.height * 0.15, this.width * 0.3, 2, lineColor);
+        const lineColor = this.team === 'player' ? 0x88ddff : 0xff9944;
+        this.speedLine1 = this.trackVisualPart(
+            this.scene.add.rectangle(-this.width * 0.4, bodyCenterY - this.height * 0.15, this.width * 0.3, 2, lineColor)
+        );
         this.add(this.speedLine1);
 
-        this.speedLine2 = this.scene.add.rectangle(-this.width * 0.4, this.height * 0.15, this.width * 0.3, 2, lineColor);
+        this.speedLine2 = this.trackVisualPart(
+            this.scene.add.rectangle(-this.width * 0.4, bodyCenterY + this.height * 0.15, this.width * 0.3, 2, lineColor)
+        );
         this.add(this.speedLine2);
 
-        // 테두리
-        this.border = this.scene.add.polygon(0, 0, points)
-            .setStrokeStyle(2, borderColor)
-            .setFillStyle();
+        this.border = this.trackVisualPart(
+            this.scene.add.polygon(0, 0, points)
+                .setStrokeStyle(2, borderColor)
+                .setFillStyle()
+        );
         this.add(this.border);
     }
 
     createGradeIndicator(glowColor) {
         const gradeStars = {
-            'common': 1,
-            'rare': 2,
-            'epic': 3,
-            'legend': 4
+            common: 1,
+            rare: 2,
+            epic: 3,
+            legend: 4
         };
 
         const starCount = gradeStars[this.grade] || 1;
@@ -211,25 +217,19 @@ export default class Monster extends Phaser.GameObjects.Container {
 
         for (let i = 0; i < starCount; i++) {
             const starX = startX + i * (starSize + starGap) + starSize / 2;
-            this.scene.add.star(starX, -this.height * 0.55, 5, starSize / 2, starSize / 2.5, glowColor)
-                .setOrigin(0.5)
-                .setDepth(this.depth + 1);
-            this.add(
-                this.scene.add.star(starX, -this.height * 0.55, 5, starSize / 2, starSize / 2.5, glowColor)
-                    .setOrigin(0.5)
-            );
+            const star = this.scene.add.star(starX, -this.height * 0.55, 5, starSize / 2, starSize / 2.5, glowColor)
+                .setOrigin(0.5);
+            this.add(star);
         }
     }
 
     getGlowStrength() {
-        const glowMap = { 'common': 0.3, 'rare': 0.5, 'epic': 0.7, 'legend': 1.0 };
+        const glowMap = { common: 0.3, rare: 0.5, epic: 0.7, legend: 1.0 };
         return glowMap[this.grade] || 0.3;
     }
 
     createGlowEffect(glowColor, strength) {
-        // 타입별 글로우 효과
         if (this.type === 'attacker') {
-            // Attacker: 빠른 스파클 애니메이션
             this.glowTween = this.scene.tweens.add({
                 targets: this,
                 alpha: 1,
@@ -239,7 +239,6 @@ export default class Monster extends Phaser.GameObjects.Container {
                 ease: 'Sine.inOut'
             });
         } else if (this.type === 'defender') {
-            // Defender: 느린 펄스
             this.glowTween = this.scene.tweens.add({
                 targets: this,
                 scale: 1 + strength * 0.05,
@@ -249,7 +248,6 @@ export default class Monster extends Phaser.GameObjects.Container {
                 ease: 'Sine.inOut'
             });
         } else {
-            // Speeder: 빠른 펄스
             this.glowTween = this.scene.tweens.add({
                 targets: this,
                 scale: 1 + strength * 0.03,
@@ -261,36 +259,48 @@ export default class Monster extends Phaser.GameObjects.Container {
         }
     }
 
+    getGroundContactY() {
+        return this.groundContactY;
+    }
+
+    alignToGround() {
+        if (!this.scene || typeof this.scene.GROUND_Y !== 'number') return;
+
+        const bounds = this.getBounds();
+        const delta = this.scene.GROUND_Y - bounds.bottom;
+
+        if (Math.abs(delta) > 0.1) {
+            this.y += delta;
+        }
+    }
+
     preUpdate(time, delta) {
         if (this.state === 'dead') return;
 
-        // 이동 (적이 공격 범위에 없으면)
+        this.alignToGround();
+
         if (this.state === 'moving') {
             const direction = this.team === 'player' ? 1 : -1;
             this.x += this.speed * direction * (delta / 1000);
         }
 
-        // 적 탐색 및 공격
         this.findAndAttackEnemies();
 
-        // 타겟이 있으면 공격
         if (this.target && this.state === 'attacking') {
             this.attackTarget(this.target);
         }
     }
 
     findAndAttackEnemies() {
-        const scene = this.scene;
-        const enemyGroup = this.team === 'player' ? scene.aiMonsters : scene.playerMonsters;
-        const enemyCastle = this.team === 'player' ? scene.aiCastle : scene.playerCastle;
+        const enemyGroup = this.team === 'player' ? this.scene.aiMonsters : this.scene.playerMonsters;
+        const enemyCastle = this.team === 'player' ? this.scene.aiCastle : this.scene.playerCastle;
 
-        // 공격 범위 내 적 찾기
         let target = null;
         let closestDist = this.attackRange;
 
-        // 몬스터 체크
-        enemyGroup.getChildren().forEach(enemy => {
+        enemyGroup.getChildren().forEach((enemy) => {
             if (enemy.hp <= 0) return;
+
             const dist = Math.abs(enemy.x - this.x);
             if (dist < closestDist) {
                 closestDist = dist;
@@ -298,13 +308,11 @@ export default class Monster extends Phaser.GameObjects.Container {
             }
         });
 
-        // 성 체크
         const castleDist = Math.abs(enemyCastle.x + enemyCastle.width / 2 - this.x);
         if (castleDist < closestDist) {
             target = enemyCastle;
         }
 
-        // 타겟이 있으면 공격 상태
         if (target) {
             this.state = 'attacking';
             this.target = target;
@@ -321,7 +329,6 @@ export default class Monster extends Phaser.GameObjects.Container {
             target.takeDamage(this.attackDamage);
         }
 
-        // 쿨다운 시작
         this.canAttack = false;
         this.scene.time.delayedCall(this.attackCooldown, () => {
             this.canAttack = true;
@@ -346,14 +353,13 @@ export default class Monster extends Phaser.GameObjects.Container {
         this.hpBar.setDisplaySize(this.width * ratio, 6);
         this.hpBar.setX(-(this.width * (1 - ratio)) / 2);
 
-        // 색상 변경
         let color;
         if (ratio > 0.5) {
-            color = 0x00FF00;
+            color = 0x00ff00;
         } else if (ratio > 0.2) {
-            color = 0xFFFF00;
+            color = 0xffff00;
         } else {
-            color = 0xFF0000;
+            color = 0xff0000;
         }
         this.hpBar.setFillStyle(color);
     }
@@ -361,14 +367,11 @@ export default class Monster extends Phaser.GameObjects.Container {
     die() {
         this.state = 'dead';
 
-        // 몬스터 사망 알림 (카운트 감소)
         if (this.scene && typeof this.scene.onMonsterDeath === 'function') {
             this.scene.onMonsterDeath(this.team);
         }
 
-        // 타입별 죽음 애니메이션
         if (this.type === 'attacker') {
-            // Attacker: 빠른 폭발 효과
             this.scene.tweens.add({
                 targets: this,
                 scale: 1.2,
@@ -378,7 +381,6 @@ export default class Monster extends Phaser.GameObjects.Container {
                 onComplete: () => this.destroy()
             });
         } else if (this.type === 'defender') {
-            // Defender: 느린 부서지는 효과
             this.scene.tweens.add({
                 targets: this,
                 scale: 0.8,
@@ -388,7 +390,6 @@ export default class Monster extends Phaser.GameObjects.Container {
                 onComplete: () => this.destroy()
             });
         } else {
-            // Speeder: 빠른 사라짐
             this.scene.tweens.add({
                 targets: this,
                 scale: 0.5,
