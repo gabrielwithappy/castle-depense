@@ -4,10 +4,11 @@
 export const AI_CONFIG = {
     easy: {
         name: '초급',
-        spawnCooldown: 4000, // ms
+        spawnCooldown: 5200, // ms, 기존 4000ms에서 30% 증가
         availableGrades: ['common', 'rare', 'epic', 'super_epic'],
         decisionDelay: 500,  // AI 반응 속도
-        maxEnergy: 30  // 에너지 최대값
+        maxEnergy: 30,  // 에너지 최대값
+        monsterDamageMultiplier: 0.9
     },
     normal: {
         name: '중급',
@@ -21,7 +22,8 @@ export const AI_CONFIG = {
         spawnCooldown: 2000,
         availableGrades: ['common', 'rare', 'epic', 'super_epic', 'mystic', 'legendary', 'hero'],
         decisionDelay: 100,
-        maxEnergy: 50
+        maxEnergy: 50,
+        energyRegenMultiplier: 1.2
     }
 };
 

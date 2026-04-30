@@ -200,6 +200,15 @@ function testAIConfig(check) {
 
         check.assert(normalGrades >= easyGrades, 'Normal AI가 Easy AI보다 적은 등급만 사용 가능');
     });
+
+    check.addTest('초급 AI 밸런스 조정값이 요구사항과 일치하는가', () => {
+        check.assert(AI_CONFIG.easy.spawnCooldown === 5200, '초급 AI 소환 시간은 5.2초여야 함');
+        check.assert(AI_CONFIG.easy.monsterDamageMultiplier === 0.9, '초급 AI 몬스터 데미지는 10% 감소해야 함');
+    });
+
+    check.addTest('고급 AI 에너지 큐브 회복 속도가 요구사항과 일치하는가', () => {
+        check.assert(AI_CONFIG.hard.energyRegenMultiplier === 1.2, '고급 AI 에너지 큐브 회복 속도는 20% 증가해야 함');
+    });
 }
 
 /**

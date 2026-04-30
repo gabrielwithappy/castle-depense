@@ -388,7 +388,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 0.1초마다 호출되므로 rate / 10
         this.playerEnergy = Math.min(this.playerEnergy + rate / 10, this.maxEnergy);
-        this.aiEnergy = Math.min(this.aiEnergy + rate / 10, this.maxEnergy);
+        this.aiEnergy = Math.min(this.aiEnergy + (rate * (this.aiConfig.energyRegenMultiplier || 1)) / 10, this.maxEnergy);
     }
 
     updateUI() {
@@ -566,6 +566,7 @@ export default class GameScene extends Phaser.Scene {
         const y = this.GROUND_Y - monsterHeight / 2;
 
         const monster = new Monster(this, x, y, 'ai', grade, type);
+        monster.attackDamage = Math.floor(monster.attackDamage * (this.aiConfig.monsterDamageMultiplier || 1));
         this.aiMonsters.add(monster);
         this.add.existing(monster);
 
