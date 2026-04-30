@@ -82,6 +82,19 @@ export const MONSTER_STATS = {
 };
 
 /**
+ * 몬스터 등급별 재소환 시간(ms)
+ */
+export const MONSTER_RESPAWN_COOLDOWNS = {
+    common: 1000,
+    rare: 1000,
+    epic: 3000,
+    super_epic: 3000,
+    mystic: 5000,
+    legendary: 5000,
+    hero: 5000
+};
+
+/**
  * 몬스터 타입별 수정자
  */
 export const MONSTER_TYPE_MODIFIERS = {
@@ -107,6 +120,13 @@ export const MONSTER_TYPE_MODIFIERS = {
  */
 export function getMonsterCost(grade) {
     return MONSTER_STATS[grade]?.cost || 2;
+}
+
+/**
+ * 몬스터 재소환 시간 계산
+ */
+export function getMonsterRespawnCooldown(grade) {
+    return MONSTER_RESPAWN_COOLDOWNS[grade] ?? MONSTER_RESPAWN_COOLDOWNS.common;
 }
 
 /**

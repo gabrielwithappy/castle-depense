@@ -1,6 +1,6 @@
 import { GAME, CASTLE, ENERGY, TIMER, COLORS, DEPTH } from '../config/constants.js';
 import { AI_CONFIG, PLAYER_DECK } from '../config/aiConfig.js';
-import { getMonsterCost, calculateMonsterStats } from '../config/monsterData.js';
+import { getMonsterCost, getMonsterRespawnCooldown, calculateMonsterStats } from '../config/monsterData.js';
 import Castle from '../entities/Castle.js';
 import Monster from '../entities/Monster.js';
 import Projectile from '../entities/Projectile.js';
@@ -69,6 +69,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 플레이어 덱 (10개 몬스터, common~super_epic 랜덤)
         this.playerDeck = this.generatePlayerDeck();
+        this.deckCooldownUntil = this.playerDeck.map(() => 0);
 
         // 배틀필드 몬스터 수 추적 (요구사항: 동시에 7개까지만 존재 가능)
         this.playerMonstersOnField = 0;
@@ -265,6 +266,18 @@ export default class GameScene extends Phaser.Scene {
                 color: '#88DDFF'
             }).setOrigin(0.5).setDepth(DEPTH.UI);
 
+            // 재소환 대기시간 표시
+            const cooldownOverlay = this.add.rectangle(x, deckY, cardWidth, cardHeight, 0x000000)
+                .setAlpha(0)
+                .setDepth(DEPTH.UI + 1);
+
+            const cooldownText = this.add.text(x, deckY, '', {
+                fontSize: `${Math.max(18, Math.min(28, cardWidth * 0.35))}px`,
+                fontFamily: 'Arial',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setAlpha(0).setDepth(DEPTH.UI + 2);
+
             // 클릭 이벤트
             card.on('pointerdown', () => {
                 console.log(`[createDeckUI] 카드 클릭: 슬롯 ${index}, 등급: ${slot.grade}, 타입: ${slot.type}`);
@@ -281,7 +294,7 @@ export default class GameScene extends Phaser.Scene {
                 card.setStrokeStyle(2, 0x00DDFF);
             });
 
-            this.deckButtons.push({ card, gradeText, emoji, typeSymbol, costText, slot });
+            this.deckButtons.push({ card, gradeText, emoji, typeSymbol, costText, cooldownOverlay, cooldownText, slot });
         });
     }
 
@@ -401,15 +414,32 @@ export default class GameScene extends Phaser.Scene {
     }
 
     updateDeckUI() {
-        this.deckButtons.forEach(({ card, gradeText, slot }) => {
+        const now = this.time.now;
+
+        this.deckButtons.forEach(({ card, gradeText, emoji, typeSymbol, costText, cooldownOverlay, cooldownText, slot }, index) => {
             const cost = getMonsterCost(slot.grade);
             const affordable = this.playerEnergy >= cost;
             const canSpawn = this.playerMonstersOnField < this.maxPlayerMonsters;
+            const remainingCooldown = Math.max(0, this.deckCooldownUntil[index] - now);
+            const cooldownReady = remainingCooldown <= 0;
 
             // 비용 부족 또는 배틀필드 가득 찰을 때 투명도 감소
-            const alpha = (affordable && canSpawn) ? 1 : 0.5;
+            const alpha = (affordable && canSpawn && cooldownReady) ? 1 : 0.5;
             card.setAlpha(alpha);
             if (gradeText) gradeText.setAlpha(alpha);
+            if (emoji) emoji.setAlpha(alpha);
+            if (typeSymbol) typeSymbol.setAlpha(alpha);
+            if (costText) costText.setAlpha(alpha);
+
+            if (cooldownReady) {
+                cooldownOverlay.setAlpha(0);
+                cooldownText.setAlpha(0);
+                cooldownText.setText('');
+            } else {
+                cooldownOverlay.setAlpha(0.55);
+                cooldownText.setAlpha(1);
+                cooldownText.setText(`${Math.ceil(remainingCooldown / 1000)}s`);
+            }
         });
     }
 
@@ -435,6 +465,13 @@ export default class GameScene extends Phaser.Scene {
 
         console.log(`[spawnPlayerMonster] 슬롯 찾음: ${slot.grade} ${slot.type}`);
 
+        const now = this.time.now;
+        const remainingCooldown = Math.max(0, this.deckCooldownUntil[slotIndex] - now);
+        if (remainingCooldown > 0) {
+            console.log(`[spawnPlayerMonster] 재소환 대기 중: ${Math.ceil(remainingCooldown / 1000)}초 남음`);
+            return;
+        }
+
         // 배틀필드 몬스터 수 확인 (요구사항: 동시에 7개까지만 존재 가능)
         if (this.playerMonstersOnField >= this.maxPlayerMonsters) {
             console.log(`[spawnPlayerMonster] 배틀필드 가득! (${this.playerMonstersOnField}/${this.maxPlayerMonsters})`);
@@ -451,6 +488,7 @@ export default class GameScene extends Phaser.Scene {
 
         this.playerEnergy -= cost;
         this.playerMonstersOnField++;
+        this.deckCooldownUntil[slotIndex] = now + getMonsterRespawnCooldown(slot.grade);
 
         // 몬스터는 게임 필드 바닥에 소환 (몬스터 높이의 절반만큼 위로)
         const x = this.playerCastle.x + CASTLE.WIDTH + 20;
@@ -636,4 +674,3 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 }
-

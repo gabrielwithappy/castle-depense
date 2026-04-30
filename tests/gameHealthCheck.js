@@ -6,7 +6,7 @@
  */
 
 import { GAME, COLORS, DEPTH, ENERGY, TIMER, CASTLE } from '../config/constants.js';
-import { calculateMonsterStats, getMonsterCost } from '../config/monsterData.js';
+import { calculateMonsterStats, getMonsterCost, getMonsterRespawnCooldown } from '../config/monsterData.js';
 import { AI_CONFIG, PLAYER_DECK } from '../config/aiConfig.js';
 
 class GameHealthCheck {
@@ -170,6 +170,16 @@ function testEnergy(check) {
         check.assert(ENERGY.INIT > 0, '초기 에너지가 0 이하');
         check.assert(ENERGY.MAX > ENERGY.INIT, '최대 에너지가 초기 에너지보다 작음');
         check.assert(ENERGY.REGEN_RATE > 0, '에너지 재생률이 0 이하');
+    });
+
+    check.addTest('등급별 재소환 시간이 요구사항과 일치하는가', () => {
+        check.assert(getMonsterRespawnCooldown('common') === 1000, 'common 재소환 시간은 1초여야 함');
+        check.assert(getMonsterRespawnCooldown('rare') === 1000, 'rare 재소환 시간은 1초여야 함');
+        check.assert(getMonsterRespawnCooldown('epic') === 3000, 'epic 재소환 시간은 3초여야 함');
+        check.assert(getMonsterRespawnCooldown('super_epic') === 3000, 'super_epic 재소환 시간은 3초여야 함');
+        check.assert(getMonsterRespawnCooldown('mystic') === 5000, 'mystic 재소환 시간은 5초여야 함');
+        check.assert(getMonsterRespawnCooldown('legendary') === 5000, 'legendary 재소환 시간은 5초여야 함');
+        check.assert(getMonsterRespawnCooldown('hero') === 5000, 'hero 재소환 시간은 5초여야 함');
     });
 }
 
