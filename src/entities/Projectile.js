@@ -11,6 +11,9 @@ export default class Projectile extends Phaser.GameObjects.Container {
         this.targetY = targetY;
         this.speed = 350;
         this.isDead = false;
+        this.chargeDuration = 450;
+        this.chargeElapsed = 0;
+        this.isCharging = true;
 
         this.width = 34;
         this.height = 28;
@@ -19,6 +22,7 @@ export default class Projectile extends Phaser.GameObjects.Container {
         const dy = targetY - y;
         const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
 
+        this.launchRotation = Math.atan2(dy, dx);
         this.velocityX = (dx / dist) * this.speed;
         this.velocityY = (dy / dist) * this.speed;
         this.totalDist = dist;
@@ -32,7 +36,7 @@ export default class Projectile extends Phaser.GameObjects.Container {
         const color = this.team === 'player' ? COLORS.PROJECTILE_PLAYER : COLORS.PROJECTILE_AI;
         const glowColor = this.team === 'player' ? 0x00bfff : 0xff6600;
 
-        this.rotation = Math.atan2(this.velocityY, this.velocityX);
+        this.rotation = 0;
 
         this.trail = this.scene.add.graphics();
         this.trail.lineStyle(4, glowColor, 0.45);
@@ -44,6 +48,7 @@ export default class Projectile extends Phaser.GameObjects.Container {
         this.trail.moveTo(-8, 5);
         this.trail.lineTo(-24, 11);
         this.trail.strokePath();
+        this.trail.setAlpha(0);
         this.add(this.trail);
 
         this.glow = this.scene.add.circle(0, 0, 24, glowColor, 0.35);
@@ -80,7 +85,30 @@ export default class Projectile extends Phaser.GameObjects.Container {
         this.highlight = this.scene.add.circle(7, -4, 4, 0xffffff, 0.9);
         this.add(this.highlight);
 
-        this.createLaunchEffect(glowColor);
+        this.setScale(0.25);
+        this.setAlpha(0);
+
+        this.scene.tweens.add({
+            targets: this,
+            y: this.y - 16,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            alpha: 1,
+            angle: this.team === 'player' ? 18 : -18,
+            duration: this.chargeDuration,
+            ease: 'Back.easeOut'
+        });
+
+        this.scene.tweens.add({
+            targets: this.glow,
+            scaleX: 1.8,
+            scaleY: 1.8,
+            alpha: 0.1,
+            yoyo: true,
+            repeat: 1,
+            duration: this.chargeDuration / 2,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     createLaunchEffect(color) {
@@ -132,6 +160,22 @@ export default class Projectile extends Phaser.GameObjects.Container {
     preUpdate(time, delta) {
         if (this.isDead) return;
 
+        const pulse = 1 + Math.sin(time * 0.01) * 0.2;
+        this.glow.setScale(pulse);
+        this.midGlow.setScale(0.95 + Math.sin(time * 0.014) * 0.12);
+        this.highlight.setAlpha(0.75 + Math.sin(time * 0.018) * 0.2);
+
+        if (this.isCharging) {
+            this.chargeElapsed += delta;
+            if (this.chargeElapsed < this.chargeDuration) return;
+
+            const glowColor = this.team === 'player' ? 0x00bfff : 0xff6600;
+            this.isCharging = false;
+            this.rotation = this.launchRotation;
+            this.trail.setAlpha(1);
+            this.createLaunchEffect(glowColor);
+        }
+
         const dt = delta / 1000;
         const moveX = this.velocityX * dt;
         const moveY = this.velocityY * dt;
@@ -139,11 +183,6 @@ export default class Projectile extends Phaser.GameObjects.Container {
         this.x += moveX;
         this.y += moveY;
         this.traveledDist += Math.sqrt(moveX * moveX + moveY * moveY);
-
-        const pulse = 1 + Math.sin(time * 0.01) * 0.2;
-        this.glow.setScale(pulse);
-        this.midGlow.setScale(0.95 + Math.sin(time * 0.014) * 0.12);
-        this.highlight.setAlpha(0.75 + Math.sin(time * 0.018) * 0.2);
 
         if (this.traveledDist >= this.totalDist) {
             this.reachTarget();

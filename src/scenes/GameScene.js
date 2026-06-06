@@ -462,7 +462,7 @@ export default class GameScene extends Phaser.Scene {
             const dist = Math.sqrt(
                 Math.pow(targetX - startX, 2) + Math.pow(targetY - startY, 2)
             );
-            const travelTime = (dist / 350) * 1000; // 350 = projectile speed
+            const travelTime = ((dist / 350) * 1000) + projectile.chargeDuration; // 350 = projectile speed
 
             this.time.delayedCall(travelTime, () => {
                 if (closest && closest.hp > 0 && !closest.isDead) {
